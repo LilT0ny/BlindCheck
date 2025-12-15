@@ -1,0 +1,41 @@
+
+trigger:
+- Frontend 
+
+pool:
+  vmImage: 'ubuntu-latest' # Elige el agente de la máquina virtual (puedes usar 'windows-latest' si lo prefieres)
+
+variables:
+  # Define la versión de Node y el directorio donde se genera la build
+  nodeVersion: '24.11.1'
+  # Ajusta esta variable: 'dist', 'build', 'out', etc., según tu framework (React, Vue, Angular)
+  webArtifactName: 'web-app-build'
+  webBuildDirectory: 'dist' 
+
+jobs:
+- job: BuildFrontend
+  displayName: 'Compilar el Frontend'
+
+  steps:
+  
+  - task: NodeTool@0
+    displayName: '⚙️ Instalar Node.js'
+    inputs:
+      versionSpec: $(nodeVersion)
+      
+  # 1. Instalar dependencias (npm i)
+  - script: npm ci # 'npm ci' es más rápido y recomendado en CI/CD que 'npm i'
+    displayName: '📦 Instalar Dependencias'
+    
+  # 2. Ejecutar la compilación (npm run build)
+  - script: npm run build
+    displayName: '🔨 Ejecutar NPM Build'
+    
+  # 3. Publicar los artefactos (La salida de la compilación)
+  # Este paso es CRUCIAL para que los archivos generados puedan usarse en el paso de Despliegue (Release Pipeline)
+  - task: PublishBuildArtifacts@1
+    displayName: '⬆️ Publicar Artefactos de la Build'
+    inputs:
+      PathtoPublish: '$(System.DefaultWorkingDirectory)/$(webBuildDirectory)'
+      ArtifactName: $(webArtifactName)
+      publishLocation: 'Container'
