@@ -1,0 +1,131 @@
+.gestion-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.gestion-header {
+  margin-bottom: 2rem;
+}
+
+.gestion-header h2 {
+  margin: 0;
+}
+
+.filtros {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filtro-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  background: white;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filtro-btn:hover {
+  background: #f3f4f6;
+}
+
+.filtro-btn.active {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+.solicitudes-table {
+  background: white;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.solicitudes-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.solicitudes-table th {
+  background: #f9fafb;
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.solicitudes-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.solicitudes-table tr:hover {
+  background: #f9fafb;
+}
+
+.acciones-btn-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
+.btn-error {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-error:hover {
+  background: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .solicitudes-table {
+    font-size: 0.85rem;
+  }
+  
+  .solicitudes-table th,
+  .solicitudes-table td {
+    padding: 0.5rem;
+  }
+}
+
+/* Modal para asignar docente */
+.info-solicitud {
+  background: #f3f4f6;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.info-solicitud p {
+  margin: 0.5rem 0;
+}
+
+.info-solicitud .text-muted {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #d1d5db;
+}
+
+.alert-warning {
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  color: #92400e;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  text-align: center;
+}
