@@ -10,7 +10,7 @@ from models.schemas import (
 from database import (
     solicitudes_collection, estudiantes_collection, 
     mensajes_collection, materias_collection, calificaciones_collection,
-    docentes_collection
+    docentes_collection, evidencias_collection
 )
 from utils.auth import get_current_user
 from utils.encryption import anonymize_name, anonymize_profesor
@@ -80,6 +80,21 @@ async def crear_solicitud(
     docente = await docentes_collection.find_one({"_id": solicitud.docente_id})
     if not docente:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Docente no encontrado")
+    
+    # ✅ VALIDACIÓN CRÍTICA: Verificar que exista una evidencia subida para esta combinación
+    # docente_id, materia_id, grupo, aporte
+    evidencia = await evidencias_collection.find_one({
+        "docente_id": solicitud.docente_id,
+        "materia_id": solicitud.materia_id,
+        "grupo": solicitud.grupo,
+        "aporte": solicitud.aporte
+    })
+    
+    if not evidencia:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No hay evidencias disponibles para solicitar recalificación de este aporte. El docente debe subir la evidencia primero."
+        )
     
     # Obtener datos del estudiante para anonimización
     estudiante = await estudiantes_collection.find_one({"_id": current_user["user_id"]})
@@ -327,3 +342,50 @@ async def obtener_docentes(current_user: Dict = Depends(get_current_user)):
         }
         for doc in docentes
     ]
+
+@router.get("/opciones-solicitud")
+async def obtener_opciones_solicitud(current_user: Dict = Depends(get_current_user)):
+    """
+    Obtiene SOLO las opciones de solicitud que tienen evidencias disponibles.
+    Retorna: lista de {docente_id, docente_nombre, materia_id, materia_nombre, grupo, aporte}
+    """
+    if current_user["role"] != "estudiante":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+    
+    # Obtener el estudiante
+    estudiante = await estudiantes_collection.find_one({"_id": current_user["user_id"]})
+    if not estudiante:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estudiante no encontrado")
+    
+    materias_cursando = estudiante.get("materias_cursando", [])
+    
+    # Obtener TODAS las evidencias que existen en el sistema
+    # (ya sea que pertenezcan a materias que cursa el estudiante o no, para propósitos informativos)
+    evidencias = await evidencias_collection.find().to_list(1000)
+    
+    opciones = []
+    
+    for evidencia in evidencias:
+        # Obtener datos del docente y materia
+        docente = await docentes_collection.find_one({"_id": evidencia["docente_id"]})
+        materia = await materias_collection.find_one({"_id": evidencia["materia_id"]})
+        
+        if not docente or not materia:
+            continue
+        
+        # Crear la opción de solicitud
+        opcion = {
+            "docente_id": str(evidencia["docente_id"]),
+            "docente_nombre": docente["nombre"],
+            "materia_id": str(evidencia["materia_id"]),
+            "materia_nombre": materia["nombre"],
+            "grupo": evidencia["grupo"],
+            "aporte": evidencia["aporte"]
+        }
+        
+        # Evitar duplicados (mismo docente + materia + grupo + aporte)
+        if opcion not in opciones:
+            opciones.append(opcion)
+    
+    return opciones
+

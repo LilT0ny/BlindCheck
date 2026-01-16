@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
+import AlertModal from '../../components/AlertModal';
+import ConfirmModal from '../../components/ConfirmModal';
 import api from '../../services/api';
 import './GestionDocentes.css';
 
@@ -11,6 +13,8 @@ const GestionDocentes = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordTemporal, setPasswordTemporal] = useState('');
   const [editando, setEditando] = useState(null);
+  const [alert, setAlert] = useState({ show: false, type: 'info', title: '', message: '' });
+  const [confirm, setConfirm] = useState({ show: false, title: '', message: '', action: null, type: 'danger' });
   const [formData, setFormData] = useState({
     email: '',
     nombre: '',
@@ -42,7 +46,7 @@ const GestionDocentes = () => {
     try {
       if (editando) {
         await api.put(`/subdecano/docentes/${editando}`, formData);
-        alert('✅ Docente actualizado');
+        setAlert({ show: true, type: 'success', title: '✅ Éxito', message: 'Docente actualizado exitosamente' });
         setShowModal(false);
       } else {
         const res = await api.post('/subdecano/docentes', formData);
@@ -54,7 +58,7 @@ const GestionDocentes = () => {
       cargarDatos();
     } catch (error) {
       console.error('Error:', error);
-      alert(error.response?.data?.detail || '❌ Error al guardar docente');
+      setAlert({ show: true, type: 'error', title: '❌ Error', message: error.response?.data?.detail || 'Error al guardar docente' });
     }
   };
 
@@ -70,15 +74,22 @@ const GestionDocentes = () => {
   };
 
   const eliminar = async (id) => {
-    if (!window.confirm('¿Desactivar este docente?')) return;
-    try {
-      await api.delete(`/subdecano/docentes/${id}`);
-      alert('✅ Docente desactivado');
-      cargarDatos();
-    } catch (error) {
-      console.error('Error:', error);
-      alert('❌ Error al desactivar');
-    }
+    setConfirm({
+      show: true,
+      title: '⚠️ Desactivar Docente',
+      message: '¿Está seguro de que desea desactivar este docente?',
+      type: 'danger',
+      action: async () => {
+        try {
+          await api.delete(`/subdecano/docentes/${id}`);
+          setAlert({ show: true, type: 'success', title: '✅ Éxito', message: 'Docente desactivado exitosamente' });
+          cargarDatos();
+        } catch (error) {
+          console.error('Error:', error);
+          setAlert({ show: true, type: 'error', title: '❌ Error', message: 'Error al desactivar docente' });
+        }
+      }
+    });
   };
 
   const resetForm = () => {
@@ -107,7 +118,7 @@ const GestionDocentes = () => {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(passwordTemporal);
-    alert('📋 Contraseña copiada al portapapeles');
+    setAlert({ show: true, type: 'info', title: 'ℹ️ Copiar', message: 'Contraseña copiada al portapapeles' });
   };
 
   if (loading) {
@@ -120,6 +131,13 @@ const GestionDocentes = () => {
 
   return (
     <Layout title="Gestión de Docentes">
+      <AlertModal 
+        show={alert.show}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+        onClose={() => setAlert({ ...alert, show: false })}
+      />
       <div className="gestion-container">
         <div className="gestion-header">
           <h2>👨‍🏫 Gestión de Docentes</h2>
@@ -293,6 +311,26 @@ const GestionDocentes = () => {
             </div>
           </div>
         )}
+
+        <AlertModal 
+          show={alert.show}
+          type={alert.type}
+          title={alert.title}
+          message={alert.message}
+          onClose={() => setAlert({ ...alert, show: false })}
+        />
+
+        <ConfirmModal
+          show={confirm.show}
+          type={confirm.type}
+          title={confirm.title}
+          message={confirm.message}
+          onConfirm={() => {
+            if (confirm.action) confirm.action();
+            setConfirm({ ...confirm, show: false });
+          }}
+          onCancel={() => setConfirm({ ...confirm, show: false })}
+        />
       </div>
     </Layout>
   );

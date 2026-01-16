@@ -318,11 +318,15 @@ async def actualizar_estado_solicitud(
         print(f"   Materia ID: {solicitud['materia_id']}")
         print(f"   Docente Original: {solicitud['docente_id']}")
         
-        # Buscar TODOS los docentes disponibles (NO el docente original)
+        # Buscar TODOS los docentes disponibles (NO el docente original, Y QUE ESTÉN ACTIVOS)
         # Ya no se requiere que sea la misma materia
         import random
         docentes_disponibles = await docentes_collection.find({
-            "_id": {"$ne": solicitud["docente_id"]}
+            "_id": {"$ne": solicitud["docente_id"]},
+            "$or": [
+                {"activo": True},
+                {"activo": {"$exists": False}}  # Si no tienen el campo, asumir que están activos
+            ]
         }).to_list(length=100)
         
         print(f"   👥 Docentes disponibles en la carrera: {len(docentes_disponibles)}")
@@ -441,10 +445,14 @@ async def obtener_docentes_disponibles(
     print(f"   Materia ID: {solicitud['materia_id']}")
     print(f"   Docente Original ID: {solicitud['docente_id']}")
     
-    # Buscar TODOS los docentes EXCEPTO el docente original
+    # Buscar TODOS los docentes EXCEPTO el docente original Y QUE ESTÉN ACTIVOS
     # Ya no se requiere que tengan la misma materia asignada
     docentes = await docentes_collection.find({
-        "_id": {"$ne": solicitud["docente_id"]}  # Excluir docente original
+        "_id": {"$ne": solicitud["docente_id"]},  # Excluir docente original
+        "$or": [
+            {"activo": True},
+            {"activo": {"$exists": False}}  # Si no tienen el campo, asumir que están activos
+        ]
     }).to_list(length=100)
     
     print(f"   👥 Docentes disponibles en la carrera: {len(docentes)}")
@@ -501,6 +509,13 @@ async def asignar_docente_recalificador(
     docente = await docentes_collection.find_one({"_id": docente_recalificador_id})
     if not docente:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Docente no encontrado")
+    
+    # ✅ Verificar que el docente esté ACTIVO
+    if docente.get("estado") != "Activo":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No puedes asignar a un docente inactivo"
+        )
     
     if str(solicitud["materia_id"]) not in docente.get("materias", []):
         raise HTTPException(

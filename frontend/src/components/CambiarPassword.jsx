@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import AlertModal from './AlertModal';
+import api from '../services/api';
 import './CambiarPassword.css';
 
 const CambiarPassword = ({ onPasswordChanged }) => {
@@ -6,6 +8,7 @@ const CambiarPassword = ({ onPasswordChanged }) => {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [alert, setAlert] = useState({ show: false, type: 'info', title: '', message: '' });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -57,8 +60,8 @@ const CambiarPassword = ({ onPasswordChanged }) => {
         throw new Error('Error al cambiar la contraseña');
       }
 
-      alert('✅ Contraseña actualizada exitosamente');
-      onPasswordChanged();
+      setAlert({ show: true, type: 'success', title: '✅ Éxito', message: 'Contraseña actualizada exitosamente' });
+      setTimeout(() => onPasswordChanged(), 1500);
     } catch (error) {
       console.error('Error:', error);
       setError('Error al cambiar la contraseña');
@@ -69,6 +72,13 @@ const CambiarPassword = ({ onPasswordChanged }) => {
 
   return (
     <div className="cambiar-password-overlay">
+      <AlertModal 
+        show={alert.show}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+        onClose={() => setAlert({ ...alert, show: false })}
+      />
       <div className="cambiar-password-modal">
         <div className="cambiar-password-header">
           <h2>🔒 Cambio de Contraseña Obligatorio</h2>

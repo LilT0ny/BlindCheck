@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
+import AlertModal from '../../components/AlertModal';
 import ImagePixelator from '../../components/ImagePixelator';
 import api from '../../services/api';
 import './Evidencias.css';
@@ -16,6 +17,7 @@ const Evidencias = () => {
   const [cropArea, setCropArea] = useState(null);
   const [evidenciaSeleccionada, setEvidenciaSeleccionada] = useState(null);
   const [showDetalleModal, setShowDetalleModal] = useState(false);
+  const [alert, setAlert] = useState({ show: false, type: 'info', title: '', message: '' });
   
   // useRef para mantener la referencia actualizada del área
   const cropAreaRef = React.useRef(null);
@@ -45,7 +47,7 @@ const Evidencias = () => {
       setEstudiantes(estudiantesRes.data);
     } catch (error) {
       console.error('Error al cargar datos:', error);
-      alert('Error al cargar evidencias');
+      setAlert({ show: true, type: 'error', title: '❌ Error', message: 'Error al cargar evidencias' });
     } finally {
       setLoading(false);
     }
@@ -60,7 +62,7 @@ const Evidencias = () => {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('Solo se permiten archivos de imagen');
+        setAlert({ show: true, type: 'error', title: '❌ Error', message: 'Solo se permiten archivos de imagen' });
         return;
       }
       setFormData(prev => ({ ...prev, archivo: file }));
@@ -71,12 +73,12 @@ const Evidencias = () => {
     e.preventDefault();
     
     if (!formData.archivo) {
-      alert('Debes seleccionar una imagen');
+      setAlert({ show: true, type: 'warning', title: '⚠️ Aviso', message: 'Debes seleccionar una imagen' });
       return;
     }
 
     if (!formData.estudiante_id) {
-      alert('Debes seleccionar un estudiante');
+      setAlert({ show: true, type: 'warning', title: '⚠️ Aviso', message: 'Debes seleccionar un estudiante' });
       return;
     }
 
@@ -100,7 +102,7 @@ const Evidencias = () => {
       setStep(2);
     } catch (error) {
       console.error('Error al subir evidencia:', error);
-      alert(error.response?.data?.detail || 'Error al subir evidencia temporal');
+      setAlert({ show: true, type: 'error', title: '❌ Error', message: error.response?.data?.detail || 'Error al subir evidencia temporal' });
     } finally {
       setUploading(false);
     }
@@ -144,7 +146,7 @@ const Evidencias = () => {
 
       const response = await api.post('/docente/evidencias/recortar', payload);
 
-      alert(`✅ Evidencia guardada exitosamente!\n🔑 Código: ${response.data.codigo_interno}\n📁 Hash: ${response.data.archivo_hash}`);
+      setAlert({ show: true, type: 'success', title: '✅ Éxito', message: `Evidencia guardada exitosamente!\nCódigo: ${response.data.codigo_interno}\nHash: ${response.data.archivo_hash}` });
       
       // Resetear todo
       setShowModal(false);
@@ -163,7 +165,7 @@ const Evidencias = () => {
       cargarDatos();
     } catch (error) {
       console.error('Error al guardar evidencia:', error);
-      alert(error.response?.data?.detail || 'Error al guardar evidencia');
+      setAlert({ show: true, type: 'error', title: '❌ Error', message: error.response?.data?.detail || 'Error al guardar evidencia' });
       setStep(2);
     } finally {
       setUploading(false);
@@ -209,6 +211,13 @@ const Evidencias = () => {
 
   return (
     <Layout title="Gestión de Evidencias">
+      <AlertModal 
+        show={alert.show}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+        onClose={() => setAlert({ ...alert, show: false })}
+      />
       <div className="evidencias-container">
         <div className="evidencias-header">
           <div>

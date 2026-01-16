@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
+import AlertModal from '../../components/AlertModal';
+import ConfirmModal from '../../components/ConfirmModal';
 import api from '../../services/api';
 import './GestionDocentes.css'; // Reutilizamos los estilos
 
@@ -8,6 +10,8 @@ const GestionEstudiantes = () => {
   const [materias, setMaterias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [alert, setAlert] = useState({ show: false, type: 'info', title: '', message: '' });
+  const [confirm, setConfirm] = useState({ show: false, title: '', message: '', action: null, type: 'danger' });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordTemporal, setPasswordTemporal] = useState('');
   const [editando, setEditando] = useState(null);
@@ -42,7 +46,7 @@ const GestionEstudiantes = () => {
     try {
       if (editando) {
         await api.put(`/subdecano/estudiantes/${editando}`, formData);
-        alert('✅ Estudiante actualizado');
+        setAlert({ show: true, type: 'success', title: '✅ Éxito', message: 'Estudiante actualizado exitosamente' });
         setShowModal(false);
       } else {
         const res = await api.post('/subdecano/estudiantes', formData);
@@ -54,7 +58,7 @@ const GestionEstudiantes = () => {
       cargarDatos();
     } catch (error) {
       console.error('Error:', error);
-      alert(error.response?.data?.detail || '❌ Error al guardar estudiante');
+      setAlert({ show: true, type: 'error', title: '❌ Error', message: error.response?.data?.detail || 'Error al guardar estudiante' });
     }
   };
 
@@ -70,15 +74,22 @@ const GestionEstudiantes = () => {
   };
 
   const eliminar = async (id) => {
-    if (!window.confirm('¿Desactivar este estudiante?')) return;
-    try {
-      await api.delete(`/subdecano/estudiantes/${id}`);
-      alert('✅ Estudiante desactivado');
-      cargarDatos();
-    } catch (error) {
-      console.error('Error:', error);
-      alert('❌ Error al desactivar');
-    }
+    setConfirm({
+      show: true,
+      title: '⚠️ Desactivar Estudiante',
+      message: '¿Está seguro de que desea desactivar este estudiante?',
+      type: 'danger',
+      action: async () => {
+        try {
+          await api.delete(`/subdecano/estudiantes/${id}`);
+          setAlert({ show: true, type: 'success', title: '✅ Éxito', message: 'Estudiante desactivado exitosamente' });
+          cargarDatos();
+        } catch (error) {
+          console.error('Error:', error);
+          setAlert({ show: true, type: 'error', title: '❌ Error', message: 'Error al desactivar estudiante' });
+        }
+      }
+    });
   };
 
   const resetForm = () => {
@@ -107,7 +118,7 @@ const GestionEstudiantes = () => {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(passwordTemporal);
-    alert('📋 Contraseña copiada al portapapeles');
+    setAlert({ show: true, type: 'info', title: 'ℹ️ Copiar', message: 'Contraseña copiada al portapapeles' });
   };
 
   if (loading) {
@@ -120,6 +131,13 @@ const GestionEstudiantes = () => {
 
   return (
     <Layout title="Gestión de Estudiantes">
+      <AlertModal 
+        show={alert.show}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+        onClose={() => setAlert({ ...alert, show: false })}
+      />
       <div className="gestion-container">
         <div className="gestion-header">
           <h2>👨‍🎓 Gestión de Estudiantes</h2>
@@ -293,6 +311,26 @@ const GestionEstudiantes = () => {
             </div>
           </div>
         )}
+
+        <AlertModal 
+          show={alert.show}
+          type={alert.type}
+          title={alert.title}
+          message={alert.message}
+          onClose={() => setAlert({ ...alert, show: false })}
+        />
+
+        <ConfirmModal
+          show={confirm.show}
+          type={confirm.type}
+          title={confirm.title}
+          message={confirm.message}
+          onConfirm={() => {
+            if (confirm.action) confirm.action();
+            setConfirm({ ...confirm, show: false });
+          }}
+          onCancel={() => setConfirm({ ...confirm, show: false })}
+        />
       </div>
     </Layout>
   );
