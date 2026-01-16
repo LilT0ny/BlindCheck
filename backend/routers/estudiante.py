@@ -31,10 +31,7 @@ async def get_perfil(current_user: Dict = Depends(get_current_user)):
         id=str(estudiante["_id"]),
         email=estudiante["email"],
         nombre=estudiante["nombre"],
-        apellido=estudiante["apellido"],
-        cedula=estudiante["cedula"],
         carrera=estudiante["carrera"],
-        nivel=estudiante["nivel"],
         fecha_registro=estudiante["fecha_registro"]
     )
 
@@ -61,10 +58,7 @@ async def actualizar_perfil(
         id=str(estudiante["_id"]),
         email=estudiante["email"],
         nombre=estudiante["nombre"],
-        apellido=estudiante["apellido"],
-        cedula=estudiante["cedula"],
         carrera=estudiante["carrera"],
-        nivel=estudiante["nivel"],
         fecha_registro=estudiante["fecha_registro"]
     )
 

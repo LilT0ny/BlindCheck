@@ -83,10 +83,7 @@ async def get_perfil(current_user: Dict = Depends(get_current_user)):
         id=str(docente["_id"]),
         email=docente["email"],
         nombre=docente["nombre"],
-        apellido=docente["apellido"],
-        cedula=docente["cedula"],
-        departamento=docente["departamento"],
-        materias_asignadas=docente.get("materias_asignadas", []),
+        materias=docente.get("materias", []),
         grupos_asignados=docente.get("grupos_asignados", []),
         fecha_registro=docente["fecha_registro"]
     )
@@ -102,7 +99,7 @@ async def actualizar_perfil(
     
     # Excluir materias y grupos de la actualización (solo el subdecano puede cambiarlos)
     update_data = {
-        k: v for k, v in datos.dict(exclude_unset=True, exclude={"materias_asignadas", "grupos_asignados"}).items()
+        k: v for k, v in datos.dict(exclude_unset=True, exclude={"materias", "grupos_asignados"}).items()
     }
     
     if update_data:
@@ -117,10 +114,7 @@ async def actualizar_perfil(
         id=str(docente["_id"]),
         email=docente["email"],
         nombre=docente["nombre"],
-        apellido=docente["apellido"],
-        cedula=docente["cedula"],
-        departamento=docente["departamento"],
-        materias_asignadas=docente.get("materias_asignadas", []),
+        materias=docente.get("materias", []),
         grupos_asignados=docente.get("grupos_asignados", []),
         fecha_registro=docente["fecha_registro"]
     )
@@ -208,7 +202,7 @@ async def subir_evidencia(
     
     # Verificar que el docente tenga asignada esta materia
     docente = await docentes_collection.find_one({"_id": current_user["user_id"]})
-    if str(materia_id) not in docente.get("materias_asignadas", []):
+    if str(materia_id) not in docente.get("materias", []):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes asignada esta materia")
     
     # Validar que sea una imagen
@@ -231,12 +225,12 @@ async def subir_evidencia(
         buffer.write(content)
     
     # Guardar metadata en la base de datos
-    materia = await materias_collection.find_one({"_id": ObjectId(materia_id)})
+    materia = await materias_collection.find_one({"_id": materia_id})
     
     nueva_evidencia = {
-        "estudiante_id": ObjectId(estudiante_id),
+        "estudiante_id": estudiante_id,
         "docente_id": current_user["user_id"],
-        "materia_id": ObjectId(materia_id),
+        "materia_id": materia_id,
         "grupo": grupo,
         "aporte": aporte,
         "descripcion": descripcion,

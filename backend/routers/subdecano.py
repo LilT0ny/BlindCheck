@@ -335,7 +335,7 @@ async def actualizar_estado_solicitud(
         
         # Seleccionar uno ALEATORIO
         docente_seleccionado = random.choice(docentes_disponibles)
-        print(f"   ✅ Docente asignado aleatoriamente: {docente_seleccionado['nombre']} {docente_seleccionado['apellido']}")
+        print(f"   ✅ Docente asignado aleatoriamente: {docente_seleccionado['nombre']}")
         
         update_data["docente_recalificador_id"] = docente_seleccionado["_id"]
         update_data["estado"] = "en_revision"
@@ -453,10 +453,10 @@ async def obtener_docentes_disponibles(
     for doc in docentes:
         # Obtener nombres de las materias asignadas
         materias_nombres = []
-        if doc.get("materias_asignadas"):
-            for materia_id_str in doc["materias_asignadas"]:
+        if doc.get("materias"):
+            for materia_id_str in doc["materias"]:
                 try:
-                    materia = await materias_collection.find_one({"_id": ObjectId(materia_id_str)})
+                    materia = await materias_collection.find_one({"_id": materia_id_str})
                     if materia:
                         materias_nombres.append(materia["nombre"])
                 except:
@@ -464,10 +464,8 @@ async def obtener_docentes_disponibles(
         
         resultado.append({
             "id": str(doc["_id"]),
-            "nombre": f"{doc['nombre']} {doc['apellido']}",
+            "nombre": doc['nombre'],
             "email": doc["email"],
-            "departamento": doc["departamento"],
-            "grupos": doc.get("grupos_asignados", []),
             "materias": materias_nombres  # Lista de materias que dicta
         })
     
@@ -515,7 +513,7 @@ async def asignar_docente_recalificador(
         {"_id": ObjectId(solicitud_id)},
         {
             "$set": {
-                "docente_recalificador_id": ObjectId(docente_recalificador_id),
+                "docente_recalificador_id": docente_recalificador_id,
                 "estado": "en_revision",
                 "fecha_asignacion": datetime.utcnow()
             }
@@ -524,7 +522,7 @@ async def asignar_docente_recalificador(
     
     # Notificar al docente recalificador
     await mensajes_collection.insert_one({
-        "destinatario_id": ObjectId(docente_recalificador_id),
+        "destinatario_id": docente_recalificador_id,
         "remitente": "Subdecano",
         "asunto": "Nueva recalificación asignada",
         "contenido": f"Se te ha asignado una nueva solicitud de recalificación para revisar.",

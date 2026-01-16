@@ -20,10 +20,7 @@ class EstadoSolicitud(str, Enum):
 class EstudianteBase(BaseModel):
     email: EmailStr
     nombre: str
-    apellido: str
-    cedula: str
     carrera: str
-    nivel: int
 
 class EstudianteCreate(EstudianteBase):
     password: str
@@ -36,10 +33,8 @@ class EstudianteCreateBySubdecano(BaseModel):
 
 class EstudianteUpdate(BaseModel):
     nombre: Optional[str] = None
-    apellido: Optional[str] = None
     email: Optional[EmailStr] = None
     carrera: Optional[str] = None
-    nivel: Optional[int] = None
 
 class EstudianteResponse(EstudianteBase):
     id: str
@@ -48,9 +43,6 @@ class EstudianteResponse(EstudianteBase):
 class DocenteBase(BaseModel):
     email: EmailStr
     nombre: str
-    apellido: str
-    cedula: str
-    departamento: str
 
 class DocenteCreate(DocenteBase):
     password: str
@@ -61,28 +53,23 @@ class DocenteCreateBySubdecano(BaseModel):
     nombre: str
     carrera: str
     materias: List[str] = []
-    materias_asignadas: List[str] = []
     grupos_asignados: List[str] = []
 
 class DocenteUpdate(BaseModel):
     nombre: Optional[str] = None
-    apellido: Optional[str] = None
     email: Optional[EmailStr] = None
-    departamento: Optional[str] = None
-    materias_asignadas: Optional[List[str]] = None
+    materias: Optional[List[str]] = None
     grupos_asignados: Optional[List[str]] = None
 
 class DocenteResponse(DocenteBase):
     id: str
-    materias_asignadas: List[str]
+    materias: List[str]
     grupos_asignados: List[str]
     fecha_registro: datetime
 
 class SubdecanoBase(BaseModel):
     email: EmailStr
     nombre: str
-    apellido: str
-    cedula: str
 
 class SubdecanoCreate(SubdecanoBase):
     password: str

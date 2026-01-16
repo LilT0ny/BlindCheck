@@ -12,8 +12,26 @@ const CambiarPassword = ({ onPasswordChanged }) => {
     setError('');
 
     // Validaciones
-    if (passwordNueva.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    if (passwordNueva.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+
+    // Validar mayúscula
+    if (!/[A-Z]/.test(passwordNueva)) {
+      setError('La contraseña debe contener al menos una letra mayúscula');
+      return;
+    }
+
+    // Validar número
+    if (!/[0-9]/.test(passwordNueva)) {
+      setError('La contraseña debe contener al menos un número');
+      return;
+    }
+
+    // Validar carácter especial
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(passwordNueva)) {
+      setError('La contraseña debe contener al menos un carácter especial (!@#$%^&*...)');
       return;
     }
 
@@ -65,7 +83,7 @@ const CambiarPassword = ({ onPasswordChanged }) => {
               className="form-control"
               value={passwordNueva}
               onChange={(e) => setPasswordNueva(e.target.value)}
-              placeholder="Mínimo 6 caracteres"
+              placeholder="Mínimo 8 caracteres"
               required
               autoFocus
             />
@@ -100,9 +118,10 @@ const CambiarPassword = ({ onPasswordChanged }) => {
           <div className="password-requirements">
             <p><strong>Requisitos:</strong></p>
             <ul>
-              <li>Mínimo 6 caracteres</li>
-              <li>No usar la contraseña temporal</li>
-              <li>Fácil de recordar pero difícil de adivinar</li>
+              <li>Mínimo 8 caracteres</li>
+              <li>Al menos una letra mayúscula (A-Z)</li>
+              <li>Al menos un número (0-9)</li>
+              <li>Al menos un carácter especial (!@#$%...)</li>
             </ul>
           </div>
         </form>
