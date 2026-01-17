@@ -14,7 +14,6 @@ const Evidencias = () => {
   const [uploading, setUploading] = useState(false);
   const [step, setStep] = useState(1); // 1: Form, 2: Pixelar, 3: Guardando
   const [tempData, setTempData] = useState(null);
-<<<<<<< HEAD
   const [cropArea, setCropArea] = useState(null);
   const [evidenciaSeleccionada, setEvidenciaSeleccionada] = useState(null);
   const [showDetalleModal, setShowDetalleModal] = useState(false);
@@ -23,10 +22,6 @@ const Evidencias = () => {
   // useRef para mantener la referencia actualizada del área
   const cropAreaRef = React.useRef(null);
   
-=======
-  const [pixelateArea, setPixelateArea] = useState(null);
-
->>>>>>> origin/main
   const [formData, setFormData] = useState({
     estudiante_id: '',
     materia_id: '',
@@ -136,12 +131,6 @@ const Evidencias = () => {
     setStep(3);
 
     try {
-<<<<<<< HEAD
-=======
-      // Capturar el área actual antes de cualquier cambio de estado
-      const areaToPixelate = pixelateArea;
-
->>>>>>> origin/main
       const payload = {
         temp_filename: tempData.temp_filename,
         estudiante_id: formData.estudiante_id,
@@ -157,13 +146,8 @@ const Evidencias = () => {
 
       const response = await api.post('/docente/evidencias/recortar', payload);
 
-<<<<<<< HEAD
       setAlert({ show: true, type: 'success', title: '✅ Éxito', message: `Evidencia guardada exitosamente!\nCódigo: ${response.data.codigo_interno}\nHash: ${response.data.archivo_hash}` });
       
-=======
-      alert(`✅ Evidencia guardada exitosamente!\n🔑 Código: ${response.data.codigo_interno}\n📁 Hash: ${response.data.archivo_hash}`);
-
->>>>>>> origin/main
       // Resetear todo
       setShowModal(false);
       setStep(1);
@@ -437,15 +421,9 @@ const Evidencias = () => {
               )}
 
               {step === 2 && tempData && (
-<<<<<<< HEAD
                 <div className="crop-step">
                   <ImagePixelator 
                     imageUrl={`http://localhost:8000${tempData.preview_url}`}
-=======
-                <div className="pixelate-step">
-                  <ImagePixelator
-                    imageUrl={`${import.meta.env.VITE_BACKEND_URL.replace('/api', '')}${tempData.preview_url}`}
->>>>>>> origin/main
                     onAreaSelected={handleAreaSelected}
                   />
 
