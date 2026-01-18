@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Camera, Plus, Image, Lock, Check, Eye, X, Trash, ArrowRight, Search, Info, AlertTriangle, Lightbulb } from 'lucide-react';
 import Layout from '../../components/Layout';
 import AlertModal from '../../components/AlertModal';
 import ImagePixelator from '../../components/ImagePixelator';
