@@ -279,7 +279,7 @@ const Evidencias = () => {
                   <h3>{ev.materia_nombre}</h3>
                   {ev.codigo_interno && (
                     <p className="codigo-interno flex items-center gap-1">
-                      <strong><Lock className="w-3 h-3 inline" /> Código:</strong> {ev.codigo_interno}
+                      <strong><Lock className="w-3 h-3 inline" /> Código:</strong> <span className="font-mono">{ev.codigo_interno}</span>
                     </p>
                   )}
                   <p className="text-sm"><strong>Grupo:</strong> {ev.grupo}</p>
@@ -542,14 +542,14 @@ const Evidencias = () => {
                     {evidenciaSeleccionada.codigo_interno && (
                       <div>
                         <strong className="flex items-center gap-1"><Lock className="w-3 h-3" /> Código Interno:</strong>
-                        <p style={{ fontSize: '18px', color: '#0369a1', fontFamily: 'monospace', marginTop: '5px' }}>
+                        <p className="font-mono text-primary mt-1 text-lg">
                           {evidenciaSeleccionada.codigo_interno}
                         </p>
                       </div>
                     )}
                     <div>
                       <strong className="flex items-center gap-1"><Lock className="w-3 h-3" /> Hash:</strong>
-                      <p style={{ fontSize: '14px', color: '#64748b', fontFamily: 'monospace', marginTop: '5px', wordBreak: 'break-all' }}>
+                      <p className="font-mono text-secondary mt-1 text-sm break-all">
                         {evidenciaSeleccionada.archivo_nombre_hash}
                       </p>
                     </div>
