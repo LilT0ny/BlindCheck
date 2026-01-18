@@ -206,3 +206,16 @@ class CambioPasswordRequest(BaseModel):
 
 class CambioPasswordForzado(BaseModel):
     password_nueva: str
+
+# =============== MODELOS DE RECUPERACIÓN DE CONTRASEÑA ===============
+
+class SolicitudResetPassword(BaseModel):
+    email: EmailStr
+
+class SolicitudResetResponse(BaseModel):
+    id: str
+    email: str
+    rol: str
+    estado: str
+    fecha_solicitud: datetime
+    fecha_completacion: Optional[datetime] = None

@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from datetime import timedelta
 from typing import Dict
-from models.schemas import LoginRequest, TokenResponse, UserRole, CambioPasswordForzado
-from database import estudiantes_collection, docentes_collection, subdecanos_collection
+from models.schemas import LoginRequest, TokenResponse, UserRole, CambioPasswordForzado, SolicitudResetPassword
+from database import estudiantes_collection, docentes_collection, subdecanos_collection, reset_password_collection
 from utils.encryption import verify_password, decrypt_data, hash_password
 from utils.auth import create_access_token, get_current_user
 from config import settings
@@ -129,3 +129,58 @@ async def cambiar_password_forzado(
         )
     
     return {"message": "Contraseña actualizada exitosamente"}
+
+@router.post("/solicitar-reset-password")
+async def solicitar_reset_password(datos: SolicitudResetPassword):
+    """Crea una solicitud de reset de contraseña"""
+    from datetime import datetime
+    
+    # Buscar el usuario en cualquier colección
+    user = None
+    rol = None
+    
+    # Buscar en estudiantes
+    user = await estudiantes_collection.find_one({"email": datos.email})
+    if user:
+        rol = "estudiante"
+    else:
+        # Buscar en docentes
+        user = await docentes_collection.find_one({"email": datos.email})
+        if user:
+            rol = "docente"
+        else:
+            # Buscar en subdecanos
+            user = await subdecanos_collection.find_one({"email": datos.email})
+            if user:
+                rol = "subdecano"
+    
+    if not user:
+        # No revelar si el email existe o no (seguridad)
+        return {"message": "Si el email existe, se enviará una solicitud al subdecano"}
+    
+    # Verificar si ya existe una solicitud pendiente
+    solicitud_pendiente = await reset_password_collection.find_one({
+        "email": datos.email,
+        "estado": "pendiente"
+    })
+    
+    if solicitud_pendiente:
+        return {"message": "Ya existe una solicitud pendiente para este email"}
+    
+    # Crear solicitud de reset
+    solicitud = {
+        "email": datos.email,
+        "user_id": str(user["_id"]),
+        "rol": rol,
+        "estado": "pendiente",
+        "fecha_solicitud": datetime.utcnow(),
+        "fecha_completacion": None,
+        "password_temporal": None
+    }
+    
+    result = await reset_password_collection.insert_one(solicitud)
+    
+    return {
+        "message": "Solicitud enviada al subdecano. Contacte al administrador para obtener una nueva contraseña.",
+        "solicitud_id": str(result.inserted_id)
+    }

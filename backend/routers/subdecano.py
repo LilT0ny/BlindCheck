@@ -674,3 +674,94 @@ async def asignar_docente_recalificador(
     })
     
     return {"message": "Docente asignado exitosamente"}
+
+# =============== GESTIÓN DE RESET DE CONTRASEÑA ===============
+
+@router.get("/solicitudes-reset-password")
+async def listar_solicitudes_reset(current_user: Dict = Depends(get_current_user)):
+    """Lista todas las solicitudes de reset de contraseña"""
+    if current_user["role"] != "subdecano":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+    
+    from database import reset_password_collection
+    
+    solicitudes = await reset_password_collection.find().sort("fecha_solicitud", -1).to_list(length=1000)
+    
+    return [
+        {
+            "id": str(sol["_id"]),
+            "email": sol["email"],
+            "rol": sol["rol"],
+            "estado": sol["estado"],
+            "fecha_solicitud": sol["fecha_solicitud"],
+            "fecha_completacion": sol.get("fecha_completacion")
+        }
+        for sol in solicitudes
+    ]
+
+@router.post("/generar-password-reset/{solicitud_id}")
+async def generar_password_reset(
+    solicitud_id: str,
+    current_user: Dict = Depends(get_current_user)
+):
+    """Genera una contraseña temporal para una solicitud de reset"""
+    if current_user["role"] != "subdecano":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+    
+    from database import reset_password_collection
+    import secrets
+    import string
+    
+    # Obtener la solicitud
+    solicitud = await reset_password_collection.find_one({"_id": ObjectId(solicitud_id)})
+    if not solicitud:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitud no encontrada")
+    
+    # Generar contraseña temporal segura
+    # Formato: 3 palabras + número + carácter especial (ej: Tiger2026!)
+    palabras = ["Tiger", "Eagle", "Falcon", "Phoenix", "Dragon", "Viper", "Bear", "Wolf"]
+    palabra = secrets.choice(palabras)
+    numero = secrets.randbelow(9000) + 1000
+    especial = secrets.choice("!@#$%&*")
+    password_temporal = f"{palabra}{numero}{especial}"
+    
+    # Obtener la colección del usuario
+    if solicitud["rol"] == "estudiante":
+        collection = estudiantes_collection
+    elif solicitud["rol"] == "docente":
+        collection = docentes_collection
+    else:
+        collection = subdecanos_collection
+    
+    # Actualizar la contraseña en la colección del usuario
+    from utils.encryption import hash_password
+    
+    await collection.update_one(
+        {"_id": solicitud["user_id"]},
+        {
+            "$set": {
+                "password": hash_password(password_temporal),
+                "primer_login": True  # Forzar cambio en próximo login
+            }
+        }
+    )
+    
+    # Actualizar la solicitud como completada
+    from datetime import datetime
+    await reset_password_collection.update_one(
+        {"_id": ObjectId(solicitud_id)},
+        {
+            "$set": {
+                "estado": "completado",
+                "password_temporal": password_temporal,
+                "fecha_completacion": datetime.utcnow()
+            }
+        }
+    )
+    
+    return {
+        "message": "Contraseña temporal generada exitosamente",
+        "email": solicitud["email"],
+        "password_temporal": password_temporal,
+        "instrucciones": "Comunique esta contraseña al usuario. Deberá cambiarla en el primer login."
+    }
