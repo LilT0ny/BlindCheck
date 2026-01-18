@@ -43,7 +43,8 @@ const Recalificaciones = () => {
       const response = await api.get(`/docente/recalificaciones/${solicitud.id}/evidencia`);
       if (response.data && response.data.archivo_url) {
         // archivo_url ya viene con / al inicio, no agregar otro /
-        const url = `${import.meta.env.VITE_BACKEND_URL.replace('/api', '')}${response.data.archivo_url}`;
+        const backendBase = import.meta.env.VITE_BACKEND_URL || '/api';
+        const url = `${backendBase.replace('/api', '')}${response.data.archivo_url}`;
         window.open(url, '_blank');
       } else {
         setAlert({ show: true, type: 'warning', title: 'Aviso', message: 'No se encontró evidencia para esta solicitud' });
