@@ -56,6 +56,15 @@ class EstudianteUpdate(BaseModel):
             return validate_blindcheck_email(v)
         return v
 
+class DocenteBase(BaseModel):
+    email: EmailStr
+    nombre: str
+    carrera: str
+    
+    @validator('email')
+    def email_must_be_blindcheck(cls, v):
+        return validate_blindcheck_email(v)
+
 class DocenteCreate(DocenteBase):
     password: str
     materias: List[str] = []
@@ -82,20 +91,6 @@ class DocenteUpdate(BaseModel):
         if v is not None:
             return validate_blindcheck_email(v)
         return v
-    nombre: str
-    carrera: str
-    materias: List[str] = []
-    grupos_asignados: List[str] = []
-
-class DocenteUpdate(BaseModel):
-    
-    @validator('email')
-    def email_must_be_blindcheck(cls, v):
-        return validate_blindcheck_email(v)
-    nombre: Optional[str] = None
-    email: Optional[EmailStr] = None
-    materias: Optional[List[str]] = None
-    grupos_asignados: Optional[List[str]] = None
 
 class DocenteResponse(DocenteBase):
     id: str
