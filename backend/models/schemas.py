@@ -53,10 +53,8 @@ class EstudianteUpdate(BaseModel):
     @validator('email')
     def email_must_be_blindcheck(cls, v):
         if v is not None:
-    
-    @validator('email')
-    def email_must_be_blindcheck(cls, v):
-        return validate_blindcheck_email(v)
+            return validate_blindcheck_email(v)
+        return v
 
 class DocenteCreate(DocenteBase):
     password: str
@@ -244,11 +242,11 @@ class MensajeUpdate(BaseModel):
 
 class CambioPasswordRequest(BaseModel):
     password_actual: str
-    password_nueva:
+    password_nueva: str
     
     @validator('email')
     def email_must_be_blindcheck(cls, v):
-        return validate_blindcheck_email(v) str
+        return validate_blindcheck_email(v) 
 
 class CambioPasswordForzado(BaseModel):
     password_nueva: str
