@@ -392,6 +392,11 @@ async def crear_materia(
     if current_user["role"] != "subdecano":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
+    # Validar que código no exista
+    existe = await materias_collection.find_one({"codigo": materia.codigo})
+    if existe:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El código de materia ya existe")
+    
     nueva_materia = {
         **materia.dict(),
         "fecha_creacion": datetime.utcnow()
@@ -412,7 +417,7 @@ async def listar_materias(current_user: Dict = Depends(get_current_user)):
     if current_user["role"] != "subdecano":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
-    materias = await materias_collection.find().to_list(length=1000)
+    materias = await materias_collection.find().sort("codigo", 1).to_list(length=1000)
     
     return [
         MateriaResponse(
@@ -423,6 +428,85 @@ async def listar_materias(current_user: Dict = Depends(get_current_user)):
         )
         for mat in materias
     ]
+
+@router.get("/materias/{materia_id}", response_model=MateriaResponse)
+async def obtener_materia(
+    materia_id: str,
+    current_user: Dict = Depends(get_current_user)
+):
+    """Obtiene detalle de una materia"""
+    if current_user["role"] != "subdecano":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+    
+    materia = await materias_collection.find_one({"_id": ObjectId(materia_id)})
+    if not materia:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Materia no encontrada")
+    
+    return MateriaResponse(
+        id=str(materia["_id"]),
+        nombre=materia["nombre"],
+        codigo=materia["codigo"],
+        descripcion=materia.get("descripcion")
+    )
+
+@router.put("/materias/{materia_id}")
+async def actualizar_materia(
+    materia_id: str,
+    datos: dict,
+    current_user: Dict = Depends(get_current_user)
+):
+    """Actualiza una materia"""
+    if current_user["role"] != "subdecano":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+    
+    materia = await materias_collection.find_one({"_id": ObjectId(materia_id)})
+    if not materia:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Materia no encontrada")
+    
+    update_data = {}
+    if "nombre" in datos:
+        update_data["nombre"] = datos["nombre"]
+    if "codigo" in datos:
+        update_data["codigo"] = datos["codigo"]
+    if "descripcion" in datos:
+        update_data["descripcion"] = datos["descripcion"]
+    
+    if not update_data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Debe proporcionar datos para actualizar")
+    
+    result = await materias_collection.update_one(
+        {"_id": ObjectId(materia_id)},
+        {"$set": update_data}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Materia no encontrada")
+    
+    return {"message": "Materia actualizada exitosamente"}
+
+@router.delete("/materias/{materia_id}")
+async def eliminar_materia(
+    materia_id: str,
+    current_user: Dict = Depends(get_current_user)
+):
+    """Elimina una materia"""
+    if current_user["role"] != "subdecano":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+    
+    # Validar que no tenga solicitudes
+    solicitudes_count = await solicitudes_collection.count_documents({"materia_id": materia_id})
+    if solicitudes_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No se puede eliminar. Tiene {solicitudes_count} solicitud(es) asociada(s)"
+        )
+    
+    result = await materias_collection.delete_one({"_id": ObjectId(materia_id)})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Materia no encontrada")
+    
+    return {"message": "Materia eliminada exitosamente"}
 
 # =============== ASIGNACIÓN DE DOCENTES RECALIFICADORES ===============
 

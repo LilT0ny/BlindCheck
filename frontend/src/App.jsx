@@ -12,6 +12,7 @@ import SubdecanoDashboard from './pages/subdecano/SubdecanoDashboard';
 import GestionSolicitudes from './pages/subdecano/GestionSolicitudes';
 import GestionDocentes from './pages/subdecano/GestionDocentes';
 import GestionEstudiantes from './pages/subdecano/GestionEstudiantes';
+import GestionMaterias from './pages/subdecano/GestionMaterias';
 import { useAuthStore } from './store/authStore';
 
 function App() {
@@ -124,6 +125,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['subdecano']}>
               <GestionEstudiantes />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/subdecano/materias" 
+          element={
+            <ProtectedRoute allowedRoles={['subdecano']}>
+              <GestionMaterias />
             </ProtectedRoute>
           } 
         />
