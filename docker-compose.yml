@@ -3,6 +3,7 @@ version: '3.8'
 services:
   mongo:
     image: mongo:latest
+    restart: unless-stopped
     container_name: blindcheck-mongo
     ports:
       - "27017:27017"
@@ -12,6 +13,7 @@ services:
   backend:
     build:
       context: ./backend
+    restart: unless-stopped
     container_name: blindcheck-backend
     # Ya no necesitas exponer el puerto 8000 al mundo, Nginx lo hará internamente
     depends_on:
@@ -27,6 +29,7 @@ services:
   frontend:
     build:
       context: ./frontend
+    restart: unless-stopped
     container_name: blindcheck-frontend
     ports:
       - "80:80"
@@ -41,6 +44,7 @@ services:
 
   certbot:
     image: certbot/certbot
+    restart: unless-stopped
     container_name: blindcheck-certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
