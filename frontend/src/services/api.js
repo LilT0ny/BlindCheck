@@ -1,18 +1,5 @@
 import axios from 'axios';
 
-// SessionStorage es verdaderamente por pestaña
-export const setAuthToken = (token) => {
-  if (token) {
-    sessionStorage.setItem('auth_token_tab', token);
-  } else {
-    sessionStorage.removeItem('auth_token_tab');
-  }
-};
-
-export const getAuthToken = () => {
-  return sessionStorage.getItem('auth_token_tab');
-};
-
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL || '/api',
   headers: {
@@ -21,12 +8,19 @@ const api = axios.create({
   withCredentials: true
 });
 
-// Interceptor para agregar token al header
+// Interceptor para agregar token desde authStore
 api.interceptors.request.use(
   (config) => {
-    const token = getAuthToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Importar dinámicamente authStore para evitar circular dependency
+    // y leer el token actual de esta pestaña
+    try {
+      const { useAuthStore } = require('../store/authStore');
+      const token = useAuthStore.getState().token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch (e) {
+      // Si falla, continuar sin token
     }
     return config;
   },
@@ -40,13 +34,16 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.log('❌ [api.js] 401 - Token inválido o expirado');
-      setAuthToken(null);
-      // Redirigir SOLO si estamos en una ruta protegida
-      if (!window.location.pathname.includes('/login') && !window.location.pathname === '/') {
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 100);
+      // Limpiar token en authStore
+      try {
+        const { useAuthStore } = require('../store/authStore');
+        useAuthStore.getState().logout();
+      } catch (e) {
+        // Si falla, redirigir a login
+      }
+      
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);
