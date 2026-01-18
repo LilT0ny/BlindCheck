@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Camera, Plus, Image, Lock, Check, Eye, X, Trash, ArrowRight, Search, Info, AlertTriangle, Lightbulb } from 'lucide-react';
 import Layout from '../../components/Layout';
 import AlertModal from '../../components/AlertModal';
 import ImagePixelator from '../../components/ImagePixelator';
@@ -18,10 +19,10 @@ const Evidencias = () => {
   const [evidenciaSeleccionada, setEvidenciaSeleccionada] = useState(null);
   const [showDetalleModal, setShowDetalleModal] = useState(false);
   const [alert, setAlert] = useState({ show: false, type: 'info', title: '', message: '' });
-  
+
   // useRef para mantener la referencia actualizada del área
   const cropAreaRef = React.useRef(null);
-  
+
   const [formData, setFormData] = useState({
     estudiante_id: '',
     materia_id: '',
@@ -47,7 +48,7 @@ const Evidencias = () => {
       setEstudiantes(estudiantesRes.data);
     } catch (error) {
       console.error('Error al cargar datos:', error);
-      setAlert({ show: true, type: 'error', title: '❌ Error', message: 'Error al cargar evidencias' });
+      setAlert({ show: true, type: 'error', title: 'Error', message: 'Error al cargar evidencias' });
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,7 @@ const Evidencias = () => {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        setAlert({ show: true, type: 'error', title: '❌ Error', message: 'Solo se permiten archivos de imagen' });
+        setAlert({ show: true, type: 'error', title: 'Error', message: 'Solo se permiten archivos de imagen' });
         return;
       }
       setFormData(prev => ({ ...prev, archivo: file }));
@@ -73,12 +74,12 @@ const Evidencias = () => {
     e.preventDefault();
 
     if (!formData.archivo) {
-      setAlert({ show: true, type: 'warning', title: '⚠️ Aviso', message: 'Debes seleccionar una imagen' });
+      setAlert({ show: true, type: 'warning', title: 'Aviso', message: 'Debes seleccionar una imagen' });
       return;
     }
 
     if (!formData.estudiante_id) {
-      setAlert({ show: true, type: 'warning', title: '⚠️ Aviso', message: 'Debes seleccionar un estudiante' });
+      setAlert({ show: true, type: 'warning', title: 'Aviso', message: 'Debes seleccionar un estudiante' });
       return;
     }
 
@@ -102,7 +103,7 @@ const Evidencias = () => {
       setStep(2);
     } catch (error) {
       console.error('Error al subir evidencia:', error);
-      setAlert({ show: true, type: 'error', title: '❌ Error', message: error.response?.data?.detail || 'Error al subir evidencia temporal' });
+      setAlert({ show: true, type: 'error', title: 'Error', message: error.response?.data?.detail || 'Error al subir evidencia temporal' });
     } finally {
       setUploading(false);
     }
@@ -122,11 +123,11 @@ const Evidencias = () => {
   const handleFinalizar = async () => {
     // Usar el ref que siempre tiene el valor más reciente
     const areaToCrop = cropAreaRef.current;
-    
+
     console.log('🔍 Pre-validación:');
     console.log('   - cropArea (estado):', cropArea);
     console.log('   - cropAreaRef.current:', areaToCrop);
-    
+
     setUploading(true);
     setStep(3);
 
@@ -146,8 +147,8 @@ const Evidencias = () => {
 
       const response = await api.post('/docente/evidencias/recortar', payload);
 
-      setAlert({ show: true, type: 'success', title: '✅ Éxito', message: `Evidencia guardada exitosamente!\nCódigo: ${response.data.codigo_interno}\nHash: ${response.data.archivo_hash}` });
-      
+      setAlert({ show: true, type: 'success', title: 'Éxito', message: `Evidencia guardada exitosamente!\nCódigo: ${response.data.codigo_interno}\nHash: ${response.data.archivo_hash}` });
+
       // Resetear todo
       setShowModal(false);
       setStep(1);
@@ -165,7 +166,7 @@ const Evidencias = () => {
       cargarDatos();
     } catch (error) {
       console.error('Error al guardar evidencia:', error);
-      setAlert({ show: true, type: 'error', title: '❌ Error', message: error.response?.data?.detail || 'Error al guardar evidencia' });
+      setAlert({ show: true, type: 'error', title: 'Error', message: error.response?.data?.detail || 'Error al guardar evidencia' });
       setStep(2);
     } finally {
       setUploading(false);
@@ -211,7 +212,7 @@ const Evidencias = () => {
 
   return (
     <Layout title="Gestión de Evidencias">
-      <AlertModal 
+      <AlertModal
         show={alert.show}
         type={alert.type}
         title={alert.title}
@@ -221,20 +222,24 @@ const Evidencias = () => {
       <div className="evidencias-container">
         <div className="evidencias-header">
           <div>
-            <h2>📸 Mis Evidencias</h2>
+            <h2 className="flex items-center gap-2">
+              <Camera className="w-6 h-6" /> Mis Evidencias
+            </h2>
             <p className="text-gray">Fotos de evaluaciones con anonimato garantizado</p>
           </div>
           <button
-            className="btn btn-primary"
+            className="btn btn-primary flex items-center gap-2"
             onClick={() => setShowModal(true)}
           >
-            ➕ Subir Nueva Evidencia
+            <Plus className="w-4 h-4" /> Subir Nueva Evidencia
           </button>
         </div>
 
         {evidencias.length === 0 ? (
           <div className="empty-state">
-            <p>📁 No has subido evidencias aún</p>
+            <p className="flex items-center justify-center gap-2">
+              <Image className="w-6 h-6" /> No has subido evidencias aún
+            </p>
             <button
               className="btn btn-secondary"
               onClick={() => setShowModal(true)}
@@ -245,8 +250,8 @@ const Evidencias = () => {
         ) : (
           <div className="evidencias-grid">
             {evidencias.map((ev) => (
-              <div 
-                key={ev.id} 
+              <div
+                key={ev.id}
                 className="evidencia-card"
                 onClick={() => handleVerDetalle(ev)}
                 style={{ cursor: 'pointer' }}
@@ -260,14 +265,22 @@ const Evidencias = () => {
                     }}
                   />
                   <div className="evidencia-overlay">
-                    <span className="hash-badge">🔒 {ev.archivo_nombre_hash}</span>
-                    {ev.recortada && <span className="recortada-badge">✓ Recortada</span>}
+                    <span className="hash-badge flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> {ev.archivo_nombre_hash}
+                    </span>
+                    {ev.recortada && (
+                      <span className="recortada-badge flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Recortada
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="evidencia-info">
                   <h3>{ev.materia_nombre}</h3>
                   {ev.codigo_interno && (
-                    <p className="codigo-interno"><strong>🔑 Código:</strong> {ev.codigo_interno}</p>
+                    <p className="codigo-interno flex items-center gap-1">
+                      <strong><Lock className="w-3 h-3 inline" /> Código:</strong> <span className="font-mono">{ev.codigo_interno}</span>
+                    </p>
                   )}
                   <p className="text-sm"><strong>Grupo:</strong> {ev.grupo}</p>
                   <p className="text-sm"><strong>Aporte:</strong> {ev.aporte}</p>
@@ -275,11 +288,11 @@ const Evidencias = () => {
                   <p className="text-xs text-gray">
                     {new Date(ev.fecha_subida).toLocaleString('es-ES')}
                   </p>
-                  <button 
-                    className="btn btn-secondary btn-sm"
+                  <button
+                    className="btn btn-secondary btn-sm flex items-center justify-center gap-1"
                     style={{ marginTop: '10px', width: '100%' }}
                   >
-                    👁️ Ver Detalle
+                    <Eye className="w-4 h-4" /> Ver Detalle
                   </button>
                 </div>
               </div>
@@ -305,7 +318,7 @@ const Evidencias = () => {
                   onClick={handleCancelar}
                   disabled={uploading}
                 >
-                  ✕
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
@@ -395,8 +408,8 @@ const Evidencias = () => {
                       onChange={handleFileChange}
                       required
                     />
-                    <p className="text-xs text-gray mt-1">
-                      📸 En el siguiente paso podrás marcar el área con el nombre para eliminarlo
+                    <p className="text-xs text-gray mt-1 flex items-center gap-1">
+                      <Info className="w-3 h-3" /> En el siguiente paso podrás marcar el área con el nombre para eliminarlo
                     </p>
                   </div>
 
@@ -411,10 +424,10 @@ const Evidencias = () => {
                     </button>
                     <button
                       type="submit"
-                      className="btn btn-primary"
+                      className="btn btn-primary flex items-center gap-2"
                       disabled={uploading}
                     >
-                      {uploading ? 'Cargando...' : '➡️ Siguiente'}
+                      {uploading ? 'Cargando...' : <><ArrowRight className="w-4 h-4" /> Siguiente</>}
                     </button>
                   </div>
                 </form>
@@ -422,22 +435,22 @@ const Evidencias = () => {
 
               {step === 2 && tempData && (
                 <div className="crop-step">
-                  <ImagePixelator 
+                  <ImagePixelator
                     imageUrl={`http://localhost:8000${tempData.preview_url}`}
                     onAreaSelected={handleAreaSelected}
                   />
 
-                  <div className="modal-actions" style={{ 
-                    marginTop: '30px', 
-                    padding: '20px', 
-                    backgroundColor: cropArea ? '#f0f9ff' : '#fff7ed', 
+                  <div className="modal-actions" style={{
+                    marginTop: '30px',
+                    padding: '20px',
+                    backgroundColor: cropArea ? '#f0f9ff' : '#fff7ed',
                     borderRadius: '8px',
                     border: cropArea ? '2px solid #0ea5e9' : '2px solid #fb923c'
                   }}>
                     {cropArea ? (
                       <>
-                        <h3 style={{ marginBottom: '15px', color: '#0369a1' }}>
-                          ✅ Área marcada - Se eliminará esto y todo lo de arriba
+                        <h3 style={{ marginBottom: '15px', color: '#0369a1' }} className="flex items-center gap-2">
+                          <Check className="w-5 h-5" /> Área marcada - Se eliminará esto y todo lo de arriba
                         </h3>
                         <p style={{ marginBottom: '15px', color: '#0c4a6e', fontSize: '14px' }}>
                           📏 Área a eliminar: {Math.round(cropArea.width)} x {Math.round(cropArea.height)} píxeles
@@ -445,15 +458,15 @@ const Evidencias = () => {
                       </>
                     ) : (
                       <>
-                        <h3 style={{ marginBottom: '15px', color: '#c2410c' }}>
-                          📸 Guardar imagen completa
+                        <h3 style={{ marginBottom: '15px', color: '#c2410c' }} className="flex items-center gap-2">
+                          <Camera className="w-5 h-5" /> Guardar imagen completa
                         </h3>
                         <p style={{ marginBottom: '15px', color: '#7c2d12', fontSize: '14px' }}>
                           La imagen se guardará sin recortes. Dibuja un rectángulo para seleccionar solo una parte.
                         </p>
                       </>
                     )}
-                    
+
                     <button
                       type="button"
                       className="btn btn-primary"
@@ -481,11 +494,11 @@ const Evidencias = () => {
                     </button>
                   </div>
 
-                  <p className="text-xs text-center text-gray mt-2">
-                    💡 Dibuja un rectángulo sobre el NOMBRE del estudiante para eliminarlo
+                  <p className="text-xs text-center text-gray mt-2 flex items-center justify-center gap-1">
+                    <Lightbulb className="w-3 h-3" /> Dibuja un rectángulo sobre el NOMBRE del estudiante para eliminarlo
                   </p>
-                  <p className="text-xs text-center text-gray">
-                    ℹ️ Se eliminará el área marcada y todo lo que esté arriba
+                  <p className="text-xs text-center text-gray flex items-center justify-center gap-1">
+                    <Info className="w-3 h-3" /> Se eliminará el área marcada y todo lo que esté arriba
                   </p>
                 </div>
               )}
@@ -507,17 +520,19 @@ const Evidencias = () => {
           <div className="modal-overlay" onClick={handleCerrarDetalle}>
             <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>📸 Detalle de Evidencia</h2>
-                <button className="modal-close" onClick={handleCerrarDetalle}>✕</button>
+                <h2 className="flex items-center gap-2">
+                  <Camera className="w-6 h-6" /> Detalle de Evidencia
+                </h2>
+                <button className="modal-close" onClick={handleCerrarDetalle}><X className="w-5 h-5" /></button>
               </div>
 
               <div style={{ padding: '20px' }}>
                 <div style={{ marginBottom: '20px' }}>
                   <h3 style={{ marginBottom: '15px', color: '#0369a1' }}>{evidenciaSeleccionada.materia_nombre}</h3>
-                  
-                  <div style={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: '1fr 1fr', 
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
                     gap: '15px',
                     backgroundColor: '#f8fafc',
                     padding: '15px',
@@ -526,15 +541,15 @@ const Evidencias = () => {
                   }}>
                     {evidenciaSeleccionada.codigo_interno && (
                       <div>
-                        <strong>🔑 Código Interno:</strong>
-                        <p style={{ fontSize: '18px', color: '#0369a1', fontFamily: 'monospace', marginTop: '5px' }}>
+                        <strong className="flex items-center gap-1"><Lock className="w-3 h-3" /> Código Interno:</strong>
+                        <p className="font-mono text-primary mt-1 text-lg">
                           {evidenciaSeleccionada.codigo_interno}
                         </p>
                       </div>
                     )}
                     <div>
-                      <strong>🔒 Hash:</strong>
-                      <p style={{ fontSize: '14px', color: '#64748b', fontFamily: 'monospace', marginTop: '5px', wordBreak: 'break-all' }}>
+                      <strong className="flex items-center gap-1"><Lock className="w-3 h-3" /> Hash:</strong>
+                      <p className="font-mono text-secondary mt-1 text-sm break-all">
                         {evidenciaSeleccionada.archivo_nombre_hash}
                       </p>
                     </div>
@@ -550,8 +565,8 @@ const Evidencias = () => {
 
                   <div style={{ marginBottom: '20px' }}>
                     <strong>Descripción:</strong>
-                    <p style={{ 
-                      marginTop: '8px', 
+                    <p style={{
+                      marginTop: '8px',
                       padding: '12px',
                       backgroundColor: '#f1f5f9',
                       borderRadius: '6px',
@@ -576,17 +591,17 @@ const Evidencias = () => {
                 </div>
 
                 {/* Imagen en grande */}
-                <div style={{ 
+                <div style={{
                   border: '2px solid #e2e8f0',
                   borderRadius: '8px',
                   overflow: 'hidden',
                   backgroundColor: '#f8fafc'
                 }}>
-                  <img 
+                  <img
                     src={`http://localhost:8000${evidenciaSeleccionada.archivo_url}`}
                     alt={evidenciaSeleccionada.descripcion}
-                    style={{ 
-                      width: '100%', 
+                    style={{
+                      width: '100%',
                       height: 'auto',
                       display: 'block',
                       maxHeight: '70vh',
