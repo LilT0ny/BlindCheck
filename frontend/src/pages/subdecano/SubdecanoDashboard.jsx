@@ -100,6 +100,9 @@ const SubdecanoDashboard = () => {
             <Link to="/subdecano/materias" className="btn btn-secondary gap-2">
               <BookOpen size={20} /> Gestionar Materias
             </Link>
+            <Link to="/subdecano/logs" className="btn btn-warning gap-2">
+              <ClipboardList size={20} /> Logs del Sistema
+            </Link>
           </div>
         </div>
 

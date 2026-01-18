@@ -20,6 +20,7 @@ from database import (
     materias_collection, mensajes_collection, estudiantes_collection
 )
 from utils.auth import get_current_user
+from utils.logger import log_action
 from utils.encryption import anonymize_name, anonymize_profesor
 
 router = APIRouter(prefix="/api/docente", tags=["Docente"])
@@ -242,6 +243,14 @@ async def subir_evidencia(
     }
     
     result = await evidencias_collection.insert_one(nueva_evidencia)
+    
+    # REGISTRAR LOG
+    await log_action(
+        current_user["user_id"], 
+        "docente", 
+        "SUBIR_EVIDENCIA", 
+        f"Evidencia subida: {materia['nombre']} - {grupo} - {aporte}"
+    )
     
     return {
         "id": str(result.inserted_id),
@@ -547,6 +556,14 @@ async def calificar_solicitud(
         "leido": False,
         "fecha_envio": datetime.utcnow()
     })
+    
+    # REGISTRAR LOG
+    await log_action(
+        current_user["user_id"], 
+        "docente", 
+        "CALIFICAR_SOLICITUD", 
+        f"Solicitud {solicitud_id} calificada con {nota}"
+    )
     
     return {"message": "Calificación registrada exitosamente", "nota": nota}
 

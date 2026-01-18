@@ -259,3 +259,21 @@ class SolicitudResetResponse(BaseModel):
     estado: str
     fecha_solicitud: datetime
     fecha_completacion: Optional[datetime] = None
+
+# =============== MODELOS DE LOGS ===============
+
+class LogCreate(BaseModel):
+    usuario_id: str
+    rol: str
+    accion: str
+    detalle: Optional[str] = None
+    ip: Optional[str] = None
+
+class LogResponse(BaseModel):
+    id: str
+    usuario_id: str
+    rol: str
+    accion: str
+    detalle: Optional[str]
+    fecha: datetime
+    ip: Optional[str]

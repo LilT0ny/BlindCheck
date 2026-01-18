@@ -13,6 +13,7 @@ from database import (
     docentes_collection, evidencias_collection
 )
 from utils.auth import get_current_user
+from utils.logger import log_action
 from utils.encryption import anonymize_name, anonymize_profesor
 
 router = APIRouter(prefix="/api/estudiante", tags=["Estudiante"])
@@ -126,6 +127,14 @@ async def crear_solicitud(
         "leido": False,
         "fecha_envio": datetime.utcnow()
     })
+    
+    # REGISTRAR LOG
+    await log_action(
+        current_user["user_id"], 
+        "estudiante", 
+        "CREAR_SOLICITUD", 
+        f"Solicitud creada: {materia['nombre']} - {solicitud.aporte}"
+    )
     
     return SolicitudResponse(
         id=str(result.inserted_id),

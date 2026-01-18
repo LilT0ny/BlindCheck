@@ -14,6 +14,7 @@ import GestionDocentes from './pages/subdecano/GestionDocentes';
 import GestionEstudiantes from './pages/subdecano/GestionEstudiantes';
 import GestionMaterias from './pages/subdecano/GestionMaterias';
 import SolicitudesResetPassword from './pages/subdecano/SolicitudesResetPassword';
+import LogsSistema from './pages/subdecano/LogsSistema';
 import { useAuthStore } from './store/authStore';
 
 function App() {
@@ -29,121 +30,129 @@ function App() {
     <Router>
       <Routes>
         {/* Ruta pública */}
-        <Route 
-          path="/login" 
-          element={isAuthenticated ? <Navigate to="/" replace /> : <Login />} 
+        <Route
+          path="/login"
+          element={isAuthenticated ? <Navigate to="/" replace /> : <Login />}
         />
 
         {/* Ruta raíz - redirige según el rol */}
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <ProtectedRoute>
               <RoleBasedRedirect />
             </ProtectedRoute>
-          } 
+          }
         />
 
         {/* Rutas de Estudiante */}
-        <Route 
-          path="/estudiante/dashboard" 
+        <Route
+          path="/estudiante/dashboard"
           element={
             <ProtectedRoute allowedRoles={['estudiante']}>
               <EstudianteDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/estudiante/nueva-solicitud" 
+        <Route
+          path="/estudiante/nueva-solicitud"
           element={
             <ProtectedRoute allowedRoles={['estudiante']}>
               <NuevaSolicitud />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/estudiante/solicitudes" 
+        <Route
+          path="/estudiante/solicitudes"
           element={
             <ProtectedRoute allowedRoles={['estudiante']}>
               <Solicitudes />
             </ProtectedRoute>
-          } 
+          }
         />
 
         {/* Rutas de Docente */}
-        <Route 
-          path="/docente/dashboard" 
+        <Route
+          path="/docente/dashboard"
           element={
             <ProtectedRoute allowedRoles={['docente']}>
               <DocenteDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/docente/recalificaciones" 
+        <Route
+          path="/docente/recalificaciones"
           element={
             <ProtectedRoute allowedRoles={['docente']}>
               <Recalificaciones />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/docente/evidencias" 
+        <Route
+          path="/docente/evidencias"
           element={
             <ProtectedRoute allowedRoles={['docente']}>
               <Evidencias />
             </ProtectedRoute>
-          } 
+          }
         />
 
         {/* Rutas de Subdecano */}
-        <Route 
-          path="/subdecano/dashboard" 
+        <Route
+          path="/subdecano/dashboard"
           element={
             <ProtectedRoute allowedRoles={['subdecano']}>
               <SubdecanoDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/subdecano/solicitudes" 
+        <Route
+          path="/subdecano/solicitudes"
           element={
             <ProtectedRoute allowedRoles={['subdecano']}>
               <GestionSolicitudes />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/subdecano/docentes" 
+        <Route
+          path="/subdecano/docentes"
           element={
             <ProtectedRoute allowedRoles={['subdecano']}>
               <GestionDocentes />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/subdecano/estudiantes" 
+        <Route
+          path="/subdecano/estudiantes"
           element={
             <ProtectedRoute allowedRoles={['subdecano']}>
               <GestionEstudiantes />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/subdecano/materias" 
+        <Route
+          path="/subdecano/materias"
           element={
             <ProtectedRoute allowedRoles={['subdecano']}>
               <GestionMaterias />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/subdecano/reset-password" 
+        <Route
+          path="/subdecano/reset-password"
           element={
             <ProtectedRoute allowedRoles={['subdecano']}>
               <SolicitudesResetPassword />
             </ProtectedRoute>
-          } 
+          }
+        />
+        <Route
+          path="/subdecano/logs"
+          element={
+            <ProtectedRoute allowedRoles={['subdecano']}>
+              <LogsSistema />
+            </ProtectedRoute>
+          }
         />
 
         {/* Ruta 404 */}

@@ -765,3 +765,34 @@ async def generar_password_reset(
         "password_temporal": password_temporal,
         "instrucciones": "Comunique esta contraseña al usuario. Deberá cambiarla en el primer login."
     }
+
+# =============== LOGS DEL SISTEMA ===============
+
+from models.schemas import LogResponse
+
+@router.get("/logs", response_model=List[LogResponse])
+async def obtener_logs(
+    limit: int = 100,
+    current_user: Dict = Depends(get_current_user)
+):
+    """Obtiene los logs del sistema (últimos 100 por defecto)"""
+    if current_user["role"] != "subdecano":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
+    
+    from database import logs_collection
+    
+    logs = await logs_collection.find().sort("fecha", -1).limit(limit).to_list(length=limit)
+    
+    resultado = []
+    for log in logs:
+        resultado.append(LogResponse(
+            id=str(log["_id"]),
+            usuario_id=log["usuario_id"],
+            rol=log["rol"],
+            accion=log["accion"],
+            detalle=log.get("detalle"),
+            fecha=log["fecha"],
+            ip=log.get("ip")
+        ))
+    
+    return resultado

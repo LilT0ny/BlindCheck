@@ -32,56 +32,41 @@ async def login(login_data: LoginRequest, response: Response):
         )
     
     # Buscar usuario por email
-    user = await collection.find_one({"email": login_data.email})
+async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Login para todos los roles (estudiante, docente, subdecano)
+    """
+    # Buscar en todas las colecciones
+    user = await estudiantes_collection.find_one({"email": form_data.username})
+    role = UserRole.ESTUDIANTE
     
     if not user:
-        print(f"   ❌ Usuario NO encontrado en BD")
+        user = await docentes_collection.find_one({"email": form_data.username})
+        role = UserRole.DOCENTE
+        
+    if not user:
+        user = await subdecanos_collection.find_one({"email": form_data.username})
+        role = UserRole.SUBDECANO
+    
+    if not user or not verify_password(form_data.password, user["password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas"
+            detail="Email o contraseña incorrectos",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     
-    print(f"   ✅ Usuario encontrado en BD")
-    print(f"   Hash en BD: {user['password'][:30]}...")
-    print(f"   Password ingresado: {login_data.password}")
-    
-    # Verificar contraseña
-    password_valid = verify_password(login_data.password, user["password"])
-    print(f"   Verificación password: {password_valid}")
-    
-    if not password_valid:
-        print(f"   ❌ Password incorrecto")
+    # Verificar si usuario está activo (para estudiantes y docentes)
+    if role in [UserRole.ESTUDIANTE, UserRole.DOCENTE] and not user.get("activo", True):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Usuario desactivado. Contacte al administración."
         )
-    
-    print(f"   ✅ Login exitoso\n")
-    
-    # Debug: verificar primer_login
-    primer_login_value = user.get("primer_login", False)
-    print(f"   🔍 DEBUG - primer_login en BD: {primer_login_value}")
-    print(f"   🔍 DEBUG - user completo: {user}")
-    
-    # Crear token de acceso
+
+    # Crear token
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
     access_token = create_access_token(
-        data={
-            "sub": str(user["_id"]),
-            "email": user["email"],
-            "role": login_data.role
-        },
+        data={"sub": str(user["_id"]), "role": role, "email": user["email"]},
         expires_delta=access_token_expires
-    )
-    
-    # Configurar cookie HttpOnly (segura)
-    # SIN max_age = cookie de sesión (se cierra al cerrar navegador)
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,  # No accesible desde JavaScript (seguridad)
-        secure=False,  # Cambiar a True en producción (HTTPS)
-        samesite="lax"  # Protección contra CSRF
     )
     
     response_data = {
