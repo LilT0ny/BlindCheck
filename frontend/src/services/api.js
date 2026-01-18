@@ -1,14 +1,16 @@
 import axios from 'axios';
 
-// Variable para almacenar el token en memoria (actualizado por authStore)
-let authToken = null;
-
+// SessionStorage es verdaderamente por pestaña
 export const setAuthToken = (token) => {
-  authToken = token;
+  if (token) {
+    sessionStorage.setItem('auth_token_tab', token);
+  } else {
+    sessionStorage.removeItem('auth_token_tab');
+  }
 };
 
 export const getAuthToken = () => {
-  return authToken;
+  return sessionStorage.getItem('auth_token_tab');
 };
 
 const api = axios.create({
@@ -16,14 +18,15 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  withCredentials: true  // Incluir cookies automáticamente
+  withCredentials: true
 });
 
-// Interceptor para agregar token en memoria al header
+// Interceptor para agregar token al header
 api.interceptors.request.use(
   (config) => {
-    if (authToken) {
-      config.headers.Authorization = `Bearer ${authToken}`;
+    const token = getAuthToken();
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -37,9 +40,14 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('user');
-      window.location.href = '/login';
+      console.log('❌ [api.js] 401 - Token inválido o expirado');
+      setAuthToken(null);
+      // Redirigir SOLO si estamos en una ruta protegida
+      if (!window.location.pathname.includes('/login') && !window.location.pathname === '/') {
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 100);
+      }
     }
     return Promise.reject(error);
   }
