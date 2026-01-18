@@ -237,11 +237,7 @@ class MensajeUpdate(BaseModel):
 
 class CambioPasswordRequest(BaseModel):
     password_actual: str
-    password_nueva: str
-    
-    @validator('email')
-    def email_must_be_blindcheck(cls, v):
-        return validate_blindcheck_email(v) 
+    password_nueva: str 
 
 class CambioPasswordForzado(BaseModel):
     password_nueva: str
