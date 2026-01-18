@@ -108,11 +108,26 @@ const Evidencias = () => {
       setStep(2);
     } catch (error) {
       console.error('Error al subir evidencia:', error);
+
+      let errorMessage = 'Error al subir evidencia temporal';
+
+      if (error.response?.data?.detail) {
+        if (Array.isArray(error.response.data.detail)) {
+          // Si es un array de errores de validación (FastAPI standard)
+          errorMessage = error.response.data.detail
+            .map(err => `${err.loc[err.loc.length - 1]}: ${err.msg}`)
+            .join(' | ');
+        } else {
+          // Si es un mensaje simple
+          errorMessage = error.response.data.detail;
+        }
+      }
+
       setAlert({
         show: true,
         type: 'error',
         title: '❌ Error',
-        message: error.response?.data?.detail || 'Error al subir evidencia temporal'
+        message: errorMessage
       });
     } finally {
       setUploading(false);
