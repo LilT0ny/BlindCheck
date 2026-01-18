@@ -17,15 +17,37 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            # Navegar al directorio del proyecto (ajusta el path si es diferente)
-            cd BlindCheck
+            # 1. Asegurar que estamos en el directorio correcto
+            cd BlindCheck || exit 1
             
-            # Obtener los últimos cambios
+            # 2. Detener servicios "intrusos" que puedan robar el puerto 80
+            # Usamos 'sudo' y ignoramos errores (|| true) por si no están instalados
+            sudo systemctl stop nginx || true
+            sudo systemctl stop apache2 || true
+
+            # 3. Actualizar el código (Forzado para evitar conflictos)
             git fetch --all
             git reset --hard origin/main
-            
-            # Reconstruir y levantar los contenedores en segundo plano
-            docker compose up -d --build
-            
-            # Limpieza opcional de imágenes viejas para ahorrar espacio
-            docker image prune -f
+
+            # 4. Limpieza Profunda ("Nuclear")
+            # Detener contenedores del proyecto
+            docker compose down
+            # Borrar contenedores sueltos y liberar espacio (equivalente seguro a su limpieza)
+            docker container prune -f
+            docker image prune -a -f 
+
+            # 5. Generación Condicional de Certificados (¡CRÍTICO PARA EVITAR BLOQUEO!)
+            # Solo corremos el script de Let's Encrypt si NO existen los certificados.
+            # Si lo corremos cada vez, Let's Encrypt bloqueará el dominio por "Rate Limit".
+            if [ ! -d "./certbot/conf/live/blindcheck.space" ]; then
+              echo "⚠️ No se encontraron certificados. Ejecutando script de inicialización..."
+              chmod +x init-letsencrypt.sh
+              ./init-letsencrypt.sh
+            else
+              echo "✅ Certificados encontrados. Iniciando sistema normalmente..."
+              # Levantar servicios en segundo plano con persistencia
+              docker compose up -d --build
+            fi
+
+            # 6. Verificación final
+            docker compose ps
