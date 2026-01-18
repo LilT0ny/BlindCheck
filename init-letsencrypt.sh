@@ -9,7 +9,7 @@ else
   exit 1
 fi
 
-domains=(blindcheck.space www.blindcheck.space)
+domains=(blindcheck.space)
 rsa_key_size=4096
 data_path="./certbot"
 email="anjagoni@gmail.com" # Adding email to avoid prompt
