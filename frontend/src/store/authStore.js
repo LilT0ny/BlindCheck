@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import api from '../services/api';
+import api, { setAuthToken } from '../services/api';
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -8,6 +8,7 @@ export const useAuthStore = create((set) => ({
   token: null,
   
   login: (userData, token) => {
+    setAuthToken(token); // Guardar en sessionStorage con ID único
     set({ 
       user: userData, 
       isAuthenticated: true,
@@ -22,6 +23,7 @@ export const useAuthStore = create((set) => ({
       console.error('Error en logout:', error);
     }
     
+    setAuthToken(null); // Limpiar de sessionStorage
     set({ 
       user: null, 
       isAuthenticated: false,
