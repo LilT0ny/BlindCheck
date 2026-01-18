@@ -1,38 +1,28 @@
 import axios from 'axios';
 
-// Generar ID único de pestaña al cargar el módulo
-const TAB_ID = `tab_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-const TOKEN_KEY = `auth_token_${TAB_ID}`;
-
-console.log(`[API] Pestaña inicializada con ID: ${TAB_ID}`);
-
-// Funciones para manejar el token en sessionStorage con ID único de pestaña
-export const setAuthToken = (token) => {
-  if (token) {
-    sessionStorage.setItem(TOKEN_KEY, token);
-    console.log(`[${TAB_ID}] ✅ Token guardado`);
-  } else {
-    sessionStorage.removeItem(TOKEN_KEY);
-    console.log(`[${TAB_ID}] ❌ Token eliminado`);
-  }
-};
-
-export const getAuthToken = () => {
-  return sessionStorage.getItem(TOKEN_KEY);
-};
-
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL || '/api',
   headers: {
     'Content-Type': 'application/json'
-  },
-  withCredentials: true
+  }
 });
 
-// Interceptor para agregar token al header
+// Interceptor para agregar token a las peticiones
 api.interceptors.request.use(
   (config) => {
-    const token = getAuthToken();
+    // Primero intentar desde sessionStorage (compatibilidad con código anterior)
+    let token = sessionStorage.getItem('token');
+    
+    // Si no hay en sessionStorage, intentar desde Zustand
+    if (!token) {
+      try {
+        const authStoreModule = require('../store/authStore');
+        token = authStoreModule.useAuthStore.getState().token;
+      } catch (e) {
+        // Si falla, continuar sin token
+      }
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -47,13 +37,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      console.log(`[${TAB_ID}] ❌ ${error.response.status} - Limpiando sesión`);
-      setAuthToken(null);
+    if (error.response?.status === 401) {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      // También limpiar Zustand si está disponible
+      try {
+        const authStoreModule = require('../store/authStore');
+        authStoreModule.useAuthStore.getState().logout();
+      } catch (e) {
+        // Continuar si falla
       }
+      
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

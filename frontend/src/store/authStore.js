@@ -1,41 +1,46 @@
 import { create } from 'zustand';
-import api, { setAuthToken } from '../services/api';
 
 export const useAuthStore = create((set) => ({
   user: null,
-  isAuthenticated: false,
-  isLoading: true,
   token: null,
+  isAuthenticated: false,
   
   login: (userData, token) => {
-    setAuthToken(token); // Guardar en sessionStorage con ID único
+    sessionStorage.setItem('token', token);
+    sessionStorage.setItem('user', JSON.stringify(userData));
     set({ 
       user: userData, 
-      isAuthenticated: true,
-      token: token
+      token, 
+      isAuthenticated: true 
     });
   },
   
-  logout: async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch (error) {
-      console.error('Error en logout:', error);
-    }
-    
-    setAuthToken(null); // Limpiar de sessionStorage
+  logout: () => {
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     set({ 
       user: null, 
-      isAuthenticated: false,
-      token: null
+      token: null, 
+      isAuthenticated: false 
     });
   },
   
   updateUser: (userData) => {
+    sessionStorage.setItem('user', JSON.stringify(userData));
     set({ user: userData });
   },
 
-  restoreSession: async () => {
-    set({ isLoading: false });
+  // Restaurar sesión desde sessionStorage al cargar
+  restoreSession: () => {
+    const token = sessionStorage.getItem('token');
+    const userStr = sessionStorage.getItem('user');
+    if (token && userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        set({ user, token, isAuthenticated: true });
+      } catch (error) {
+        sessionStorage.clear();
+      }
+    }
   }
 }));
