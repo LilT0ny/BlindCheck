@@ -320,6 +320,13 @@ const Evidencias = () => {
           <div
             className="modal-overlay"
             onClick={() => !uploading && handleCancelar()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                if (!uploading) handleCancelar();
+              }
+            }}
             aria-label="Cerrar modal"
             style={{ border: 'none', background: 'rgba(0,0,0,0.5)', width: '100%', height: '100%', position: 'fixed', top: 0, left: 0, cursor: 'default', zIndex: 50 }}
           >
@@ -518,6 +525,11 @@ const Evidencias = () => {
           <div
             className="modal-overlay"
             onClick={handleCerrarDetalle}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') handleCerrarDetalle();
+            }}
             aria-label="Cerrar detalle"
             style={{ border: 'none', background: 'rgba(0,0,0,0.5)', width: '100%', height: '100%', position: 'fixed', top: 0, left: 0, cursor: 'default', zIndex: 50 }}
           >

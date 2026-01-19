@@ -53,7 +53,8 @@ const Login = () => {
 
       // Si es primer login, mostrar modal de cambio de contraseña
       if (primer_login) {
-        // Token está en HttpOnly Cookie - no necesitamos guardarlo
+        // Guardar token temporalmente en el store para que api.js lo pueda usar
+        login({ id: user_id, email: formData.email, role }, access_token);
         setShowCambiarPassword(true);
         setLoading(false);
         return;
