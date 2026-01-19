@@ -1,400 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { GraduationCap, Plus, Pencil, PauseCircle, Trash2, CheckCircle, XCircle, AlertTriangle, KeyRound, ClipboardCopy } from 'lucide-react';
-import Layout from '../../components/Layout';
-import AlertModal from '../../components/AlertModal';
-import ConfirmModal from '../../components/ConfirmModal';
-import api from '../../services/api';
-import './GestionDocentes.css';
+import React from 'react';
+import { GraduationCap, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import GenericCrudPage from '../../components/subdecano/GenericCrudPage';
 
 const GestionDocentes = () => {
-  const [docentes, setDocentes] = useState([]);
-  const [materias, setMaterias] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [passwordTemporal, setPasswordTemporal] = useState('');
-  const [editando, setEditando] = useState(null);
-  const [alert, setAlert] = useState({ show: false, type: 'info', title: '', message: '' });
-  const [confirm, setConfirm] = useState({ show: false, title: '', message: '', action: null, type: 'danger' });
-  const [formData, setFormData] = useState({
-    email: '',
-    nombre: '',
-    carrera: 'Ingeniería de Software',
-    materias: []
-  });
-
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const cargarDatos = async () => {
-    try {
-      const [docentesRes, materiasRes] = await Promise.all([
-        api.get('/subdecano/docentes'),
-        api.get('/subdecano/materias')
-      ]);
-      setDocentes(docentesRes.data);
-      setMaterias(materiasRes.data);
-    } catch (error) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
+  const columns = [
+    { header: 'ID', field: 'id' },
+    { header: 'Nombre', field: 'nombre' },
+    { header: 'Email', field: 'email' },
+    { header: 'Carrera', field: 'carrera' },
+    {
+      header: 'Materias',
+      render: (item, secondaryData) => (
+        <div className="materias-list">
+          {item.materias && item.materias.map(matId => {
+            // secondaryData is expected to be list of materias from getSecondary
+            // If secondaryData is object or array? Implementation of Generic expects it.
+            // We need to check how GenericCrudPage passes it.
+            // It passes secondaryData directly.
+            // We need to expect secondaryData to be the list of materias.
+            const mat = Array.isArray(secondaryData) ? secondaryData.find(m => m.id === matId) : null;
+            return mat ? <span key={matId} className="materia-tag">{mat.codigo}</span> : null;
+          })}
+        </div>
+      )
+    },
+    {
+      header: 'Estado',
+      render: (item) => (
+        <span className={`badge ${item.activo ? 'badge-success' : 'badge-danger'}`}>
+          {item.activo ? <><CheckCircle size={14} className="inline mr-1" /> Activo</> : <><XCircle size={14} className="inline mr-1" /> Inactivo</>}
+        </span>
+      )
+    },
+    {
+      header: 'Primer Login',
+      render: (item) => (
+        item.primer_login ?
+          <span className="badge badge-warning"><AlertTriangle size={14} className="inline mr-1" /> Pendiente</span> :
+          <span className="badge badge-success"><CheckCircle size={14} className="inline mr-1" /> Completado</span>
+      )
     }
-  };
+  ];
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validar dominio del correo
-    if (!formData.email.endsWith('@blindcheck.edu')) {
-      setAlert({ show: true, type: 'error', title: 'Error', message: 'El correo debe ser del dominio @blindcheck.edu' });
-      return;
-    }
-
-    try {
-      if (editando) {
-        await api.put(`/subdecano/docentes/${editando}`, formData);
-        setAlert({ show: true, type: 'success', title: 'Éxito', message: 'Docente actualizado exitosamente' });
-        setShowModal(false);
+  const renderForm = ({ formData, setFormData, secondaryData, editando }) => {
+    // Helper to toggle materias
+    const toggleMateria = (materiaId) => {
+      const current = formData.materias || []; // Ensure array
+      if (current.includes(materiaId)) {
+        setFormData({ ...formData, materias: current.filter(m => m !== materiaId) });
       } else {
-        const res = await api.post('/subdecano/docentes', formData);
-        setPasswordTemporal(res.data.password_temporal);
-        setShowPasswordModal(true);
-        setShowModal(false);
+        setFormData({ ...formData, materias: [...current, materiaId] });
       }
-      resetForm();
-      cargarDatos();
-    } catch (error) {
-      console.error('Error:', error);
-      setAlert({ show: true, type: 'error', title: 'Error', message: error.response?.data?.detail || 'Error al guardar docente' });
-    }
-  };
+    };
 
-  const editar = (docente) => {
-    setEditando(docente.id);
-    setFormData({
-      email: docente.email,
-      nombre: docente.nombre,
-      carrera: docente.carrera,
-      materias: docente.materias
-    });
-    setShowModal(true);
-  };
-
-  const eliminar = async (id) => {
-    setConfirm({
-      show: true,
-      title: 'Desactivar Docente',
-      message: '¿Está seguro de que desea desactivar este docente? Puede reactivarlo después.',
-      type: 'danger',
-      action: async () => {
-        try {
-          await api.put(`/subdecano/docentes/${id}/desactivar`);
-          setAlert({ show: true, type: 'success', title: 'Éxito', message: 'Docente desactivado exitosamente' });
-          cargarDatos();
-        } catch (error) {
-          console.error('Error:', error);
-          setAlert({ show: true, type: 'error', title: '❌ Error', message: 'Error al desactivar docente' });
-        }
-      }
-    });
-  };
-
-  const eliminarPermanentemente = async (id) => {
-    setConfirm({
-      show: true,
-      title: 'ELIMINAR PERMANENTEMENTE',
-      message: '¡CUIDADO! Esta acción es irreversible. ¿Está seguro de que desea eliminar permanentemente este docente? Se perderán todos sus datos.',
-      type: 'danger',
-      action: async () => {
-        try {
-          await api.delete(`/subdecano/docentes/${id}`);
-          setAlert({ show: true, type: 'success', title: 'Éxito', message: 'Docente eliminado permanentemente' });
-          cargarDatos();
-        } catch (error) {
-          console.error('Error:', error);
-          setAlert({ show: true, type: 'error', title: '❌ Error', message: 'Error al eliminar docente' });
-        }
-      }
-    });
-  };
-
-  const resetForm = () => {
-    setFormData({
-      email: '',
-      nombre: '',
-      carrera: 'Ingeniería de Software',
-      materias: []
-    });
-    setEditando(null);
-  };
-
-  const toggleMateria = (materiaId) => {
-    if (formData.materias.includes(materiaId)) {
-      setFormData({
-        ...formData,
-        materias: formData.materias.filter(m => m !== materiaId)
-      });
-    } else {
-      setFormData({
-        ...formData,
-        materias: [...formData.materias, materiaId]
-      });
-    }
-  };
-
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(passwordTemporal);
-    setAlert({ show: true, type: 'info', title: 'Copiar', message: 'Contraseña copiada al portapapeles' });
-  };
-
-  if (loading) {
     return (
-      <Layout title="Gestión de Docentes">
-        <div className="text-center mt-4"><span className="loading"></span></div>
-      </Layout>
+      <>
+        <div className="form-group">
+          <label htmlFor="email">Email *</label>
+          <input
+            type="email"
+            id="email"
+            className="form-control"
+            value={formData.email || ''}
+            onChange={e => setFormData({ ...formData, email: e.target.value })}
+            required
+            disabled={!!editando}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="nombre">Nombre Completo *</label>
+          <input
+            type="text"
+            id="nombre"
+            className="form-control"
+            value={formData.nombre || ''}
+            onChange={e => setFormData({ ...formData, nombre: e.target.value })}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="carrera">Carrera *</label>
+          <input
+            type="text"
+            id="carrera"
+            className="form-control"
+            value={formData.carrera || ''}
+            onChange={e => setFormData({ ...formData, carrera: e.target.value })}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Materias Asignadas</label>
+          <div className="materias-checkbox-group">
+            {Array.isArray(secondaryData) && secondaryData.map(materia => (
+              <label key={materia.id} className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={(formData.materias || []).includes(materia.id)}
+                  onChange={() => toggleMateria(materia.id)}
+                />
+                <span>{materia.codigo} - {materia.nombre}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </>
     );
-  }
+  };
 
   return (
-    <Layout title="Gestión de Docentes">
-      <AlertModal
-        show={alert.show}
-        type={alert.type}
-        title={alert.title}
-        message={alert.message}
-        onClose={() => setAlert({ ...alert, show: false })}
-      />
-      <div className="gestion-container">
-        <div className="gestion-header">
-          <h2><GraduationCap className="inline-block mr-2" size={24} /> Gestión de Docentes</h2>
-          <button onClick={() => { resetForm(); setShowModal(true); }} className="btn btn-primary gap-2">
-            <Plus size={20} /> Nuevo Docente
-          </button>
-        </div>
-
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Email</th>
-                <th>Carrera</th>
-                <th>Materias</th>
-                <th>Estado</th>
-                <th>Primer Login</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {docentes.map(docente => (
-                <tr key={docente.id}>
-                  <td>{docente.id}</td>
-                  <td>{docente.nombre}</td>
-                  <td>{docente.email}</td>
-                  <td>{docente.carrera}</td>
-                  <td>
-                    <div className="materias-list">
-                      {docente.materias.map(matId => {
-                        const mat = materias.find(m => m.id === matId);
-                        return mat ? <span key={matId} className="materia-tag">{mat.codigo}</span> : null;
-                      })}
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge ${docente.activo ? 'badge-success' : 'badge-danger'}`}>
-                      {docente.activo ? <><CheckCircle size={14} className="inline mr-1" /> Activo</> : <><XCircle size={14} className="inline mr-1" /> Inactivo</>}
-                    </span>
-                  </td>
-                  <td>
-                    {docente.primer_login ?
-                      <span className="badge badge-warning"><AlertTriangle size={14} className="inline mr-1" /> Pendiente</span> :
-                      <span className="badge badge-success"><CheckCircle size={14} className="inline mr-1" /> Completado</span>
-                    }
-                  </td>
-                  <td>
-                    <div className="acciones-btn-group">
-                      <button onClick={() => editar(docente)} className="btn btn-sm btn-secondary" title="Editar"><Pencil size={16} /></button>
-                      <button onClick={() => eliminar(docente.id)} className="btn btn-sm btn-warning" title="Desactivar"><PauseCircle size={16} /></button>
-                      <button onClick={() => eliminarPermanentemente(docente.id)} className="btn btn-sm btn-error" title="Eliminar permanentemente"><Trash2 size={16} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Modal de Formulario */}
-        {showModal && (
-          <div
-            className="modal-overlay"
-            onClick={() => setShowModal(false)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') setShowModal(false);
-            }}
-            aria-label="Cerrar modal"
-          >
-            <div
-              className="modal-content"
-              onClick={e => e.stopPropagation()}
-              onKeyDown={e => e.stopPropagation()}
-              role="document"
-              tabIndex={-1}
-            >
-              <div className="modal-header">
-                <h3>{editando ? <><Pencil className="inline mr-2" size={20} /> Editar Docente</> : <><Plus className="inline mr-2" size={20} /> Nuevo Docente</>}</h3>
-                <button className="btn-close" onClick={() => setShowModal(false)}>✖</button>
-              </div>
-              <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                  <label htmlFor="email">Email *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    className="form-control"
-                    value={formData.email}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    required
-                    disabled={editando}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="nombre">Nombre Completo *</label>
-                  <input
-                    type="text"
-                    id="nombre"
-                    className="form-control"
-                    value={formData.nombre}
-                    onChange={e => setFormData({ ...formData, nombre: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="carrera">Carrera *</label>
-                  <input
-                    type="text"
-                    id="carrera"
-                    className="form-control"
-                    value={formData.carrera}
-                    onChange={e => setFormData({ ...formData, carrera: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Materias Asignadas</label>
-                  <div className="materias-checkbox-group">
-                    {materias.map(materia => (
-                      <label key={materia.id} className="checkbox-label">
-                        <input
-                          type="checkbox"
-                          checked={formData.materias.includes(materia.id)}
-                          onChange={() => toggleMateria(materia.id)}
-                        />
-                        <span>{materia.codigo} - {materia.nombre}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="form-actions">
-                  <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    {editando ? 'Actualizar' : 'Crear'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Modal de Contraseña Temporal */}
-        {showPasswordModal && (
-          <div
-            className="modal-overlay"
-            onClick={() => setShowPasswordModal(false)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') setShowPasswordModal(false);
-            }}
-            aria-label="Cerrar modal"
-          >
-            <div
-              className="modal-content password-modal"
-              onClick={e => e.stopPropagation()}
-              onKeyDown={e => e.stopPropagation()}
-              role="document"
-              tabIndex={-1}
-            >
-              <div className="modal-header">
-                <h3><KeyRound className="inline-block mr-2" size={24} /> Credenciales Generadas</h3>
-                <button className="btn-close" onClick={() => setShowPasswordModal(false)}>✖</button>
-              </div>
-              <div className="password-info">
-                <p className="warning-text flex items-center justify-center gap-2">
-                  <AlertTriangle size={18} /> <strong>IMPORTANTE:</strong> Guarda estas credenciales. No podrás verlas nuevamente.
-                </p>
-                <div className="credential-box">
-                  <label>Email:</label>
-                  <div className="credential-value">{formData.email}</div>
-                </div>
-                <div className="credential-box">
-                  <label>Contraseña Temporal:</label>
-                  <div className="credential-value password-value">
-                    {passwordTemporal}
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-copy"
-                      onClick={copyToClipboard}
-                    >
-                      <ClipboardCopy size={16} /> Copiar
-                    </button>
-                  </div>
-                </div>
-                <p className="info-text">
-                  El docente deberá cambiar su contraseña en el primer inicio de sesión.
-                </p>
-              </div>
-              <div className="form-actions">
-                <button className="btn btn-primary" onClick={() => setShowPasswordModal(false)}>
-                  Entendido
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <AlertModal
-          show={alert.show}
-          type={alert.type}
-          title={alert.title}
-          message={alert.message}
-          onClose={() => setAlert({ ...alert, show: false })}
-        />
-
-        <ConfirmModal
-          show={confirm.show}
-          type={confirm.type}
-          title={confirm.title}
-          message={confirm.message}
-          onConfirm={() => {
-            if (confirm.action) confirm.action();
-            setConfirm({ ...confirm, show: false });
-          }}
-          onCancel={() => setConfirm({ ...confirm, show: false })}
-        />
-      </div>
-    </Layout>
+    <GenericCrudPage
+      title="Gestión de Docentes"
+      icon={GraduationCap}
+      endpoints={{
+        getAll: '/subdecano/docentes',
+        create: '/subdecano/docentes',
+        update: (id) => `/subdecano/docentes/${id}`,
+        delete: (id) => `/subdecano/docentes/${id}`,
+        toggleActive: (id) => `/subdecano/docentes/${id}/desactivar`,
+        getSecondary: '/subdecano/materias'
+      }}
+      columns={columns}
+      renderForm={renderForm}
+      initialFormState={{
+        email: '',
+        nombre: '',
+        carrera: 'Ingeniería de Software',
+        materias: []
+      }}
+      showPasswordModal={true}
+      transformDataBeforeSubmit={(data) => {
+        // Validation could act here or inside component? Component calls it.
+        if (!data.email.endsWith('@blindcheck.edu')) {
+          // We throw error or handle validation? 
+          // Ideally validation should be in component, but custom logic is hard.
+          // For now, let backend validate or add simple check.
+          // We will let backend handle it or user generic logic.
+          // The original code had a check.
+          // Let's add simple validation alert in GenericCrudPage catch? No.
+          // Let's rely on backend for now to keep it clean, OR implementation detail:
+          // If we throw, the generic page catches it.
+          if (!data.email.endsWith('@blindcheck.edu')) {
+            throw { response: { data: { detail: 'El correo debe ser del dominio @blindcheck.edu' } } };
+          }
+        }
+        return data;
+      }}
+    />
   );
 };
 
 export default GestionDocentes;
+
