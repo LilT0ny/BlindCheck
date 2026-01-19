@@ -403,10 +403,18 @@ async def recortar_area_y_guardar(
         temp_path.unlink()
         
         # Obtener datos del estudiante y materia
-        materia = await materias_collection.find_one({"_id": materia_id})
+        materia = await materias_collection.find_one({"_id": ObjectId(materia_id)})
         
+        if not materia:
+             # Fallback si no se encuentra la materia
+             codigo_materia = "UNK"
+             nombre_materia = "Desconocida"
+        else:
+             codigo_materia = materia.get('codigo', 'MAT')
+             nombre_materia = materia.get('nombre', 'Desconocida')
+
         # Generar código de vinculación único
-        codigo_interno = f"{materia.get('codigo', 'MAT')[:4].upper()}-{aporte.upper()[:3]}-{file_hash[:6].upper()}"
+        codigo_interno = f"{codigo_materia[:4].upper()}-{aporte.upper()[:3]}-{file_hash[:6].upper()}"
         
         # Guardar metadata en BD
         nueva_evidencia = {
