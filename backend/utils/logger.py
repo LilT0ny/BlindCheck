@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from database import logs_collection
 from models.schemas import LogCreate
 
