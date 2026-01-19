@@ -59,9 +59,19 @@ async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)
     
     return {"user_id": user_id, "role": role, "email": payload.get("email")}
 
+from bson import ObjectId
+
 async def get_user_from_db(user_data: dict, collection):
     """Auxiliar para obtener usuario de DB"""
-    user = await collection.find_one({"_id": user_data["user_id"]})
+    user_id = user_data["user_id"]
+    
+    # 1. Intentar buscar por ID string (para docentes/estudiantes con IDs tipo DOC001)
+    user = await collection.find_one({"_id": user_id})
+    
+    # 2. Si no encuentra y es un formato válido de ObjectId, intentar como ObjectId (para subdecanos)
+    if not user and ObjectId.is_valid(user_id):
+        user = await collection.find_one({"_id": ObjectId(user_id)})
+        
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
