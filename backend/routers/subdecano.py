@@ -16,7 +16,7 @@ from database import (
 from utils.auth import get_current_user
 from utils.encryption import hash_password, anonymize_name
 
-router = APIRouter(prefix="/api/subdecano", tags=["Subdecano"])
+router = APIRouter(prefix="/subdecano", tags=["Subdecano"])
 
 # =============== GESTIÓN DE DOCENTES ===============
 

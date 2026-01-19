@@ -16,7 +16,7 @@ from utils.auth import get_current_user
 from utils.logger import log_action
 from utils.encryption import anonymize_name, anonymize_profesor
 
-router = APIRouter(prefix="/api/estudiante", tags=["Estudiante"])
+router = APIRouter(prefix="/estudiante", tags=["Estudiante"])
 
 @router.get("/perfil", response_model=EstudianteResponse)
 async def get_perfil(current_user: Dict = Depends(get_current_user)):
