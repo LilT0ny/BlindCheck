@@ -368,16 +368,26 @@ async def obtener_opciones_solicitud(current_user: Dict = Depends(get_current_us
     
     materias_cursando = estudiante.get("materias_cursando", [])
     
-    # Obtener TODAS las evidencias que existen en el sistema
-    # (ya sea que pertenezcan a materias que cursa el estudiante o no, para propósitos informativos)
-    evidencias = await evidencias_collection.find().to_list(1000)
+    # Obtener SOLO las evidencias del estudiante actual
+    evidencias = await evidencias_collection.find({
+        "estudiante_id": current_user["user_id"]
+    }).to_list(1000)
     
     opciones = []
     
     for evidencia in evidencias:
-        # Obtener datos del docente y materia
-        docente = await docentes_collection.find_one({"_id": evidencia["docente_id"]})
-        materia = await materias_collection.find_one({"_id": evidencia["materia_id"]})
+        # Obtener datos del docente
+        docente_id = evidencia["docente_id"]
+        docente = await docentes_collection.find_one({"_id": docente_id})
+        
+        # Obtener datos de la materia (convertir a ObjectId si es necesario)
+        materia_id_str = evidencia["materia_id"]
+        try:
+            materia_oid = ObjectId(materia_id_str)
+            materia = await materias_collection.find_one({"_id": materia_oid})
+        except:
+            # Si falla la conversión, intentar buscar como string (backup)
+            materia = await materias_collection.find_one({"_id": materia_id_str})
         
         if not docente or not materia:
             continue
@@ -389,11 +399,23 @@ async def obtener_opciones_solicitud(current_user: Dict = Depends(get_current_us
             "materia_id": str(evidencia["materia_id"]),
             "materia_nombre": materia["nombre"],
             "grupo": evidencia["grupo"],
-            "aporte": evidencia["aporte"]
+            "aporte": evidencia["aporte"],
+            "evidencia_url": evidencia.get("archivo_url")
         }
         
-        # Evitar duplicados (mismo docente + materia + grupo + aporte)
-        if opcion not in opciones:
+        # Evitar duplicados
+        # Hacemos una clave única para verificar duplicados
+        opcion_key = f"{opcion['docente_id']}-{opcion['materia_id']}-{opcion['grupo']}-{opcion['aporte']}"
+        
+        # Verificar si ya existe en la lista (basado en contenido, no referencia)
+        exists = False
+        for op in opciones:
+            k = f"{op['docente_id']}-{op['materia_id']}-{op['grupo']}-{op['aporte']}"
+            if k == opcion_key:
+                exists = True
+                break
+        
+        if not exists:
             opciones.append(opcion)
     
     return opciones
