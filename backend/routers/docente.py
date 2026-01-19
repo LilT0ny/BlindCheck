@@ -421,16 +421,15 @@ async def listar_evidencias(current_user: Dict = Depends(get_current_active_doce
 # =============== RECALIFICACIONES ===============
 
 @router.get("/recalificaciones", response_model=List[SolicitudResponse])
-@router.get("/recalificaciones", response_model=List[SolicitudResponse])
 async def listar_recalificaciones_asignadas(current_user: Dict = Depends(get_current_active_docente)):
     """Lista todas las solicitudes de recalificación asignadas al docente"""
     
     print(f"\n🔄 DEBUG RECALIFICACIONES ASIGNADAS:")
-    print(f"   Docente ID: {current_user['user_id']}")
+    print(f"   Docente ID: {current_user['_id']}")
     
     # Buscar solicitudes donde este docente esté asignado como RECALIFICADOR
     solicitudes = await solicitudes_collection.find({
-        "docente_recalificador_id": current_user["user_id"],
+        "docente_recalificador_id": current_user["_id"],
         "estado": {"$in": ["en_revision", "calificada"]}
     }).sort("fecha_creacion", -1).to_list(length=1000)
     
