@@ -53,7 +53,8 @@ const Login = () => {
 
       // Si es primer login, mostrar modal de cambio de contraseña
       if (primer_login) {
-        // Token está en HttpOnly Cookie - no necesitamos guardarlo
+        // Necesitamos guardar el token para que la petición de cambio de contraseña funcione
+        sessionStorage.setItem('token', access_token);
         setShowCambiarPassword(true);
         setLoading(false);
         return;
