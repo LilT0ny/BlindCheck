@@ -28,25 +28,27 @@ def verify_token(token: str):
         return None
 
 async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)):
-    """Obtiene el usuario actual desde la cookie o el header Authorization"""
+    """Obtiene el usuario actual desde el header Authorization o la cookie"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="No se pudo validar las credenciales",
         headers={"WWW-Authenticate": "Bearer"},
     )
     
-    # Primero, intentar obtener el token de la cookie
-    token_from_cookie = request.cookies.get("access_token")
+    payload = None
     
-    # Si no está en la cookie, usar el token del header (por si acaso)
-    if not token_from_cookie:
-        token_from_cookie = token
-    
-    if not token_from_cookie:
-        raise credentials_exception
-    
-    payload = verify_token(token_from_cookie)
-    if payload is None:
+    # 1. Intentar validar el token del header (prioridad)
+    if token:
+        payload = verify_token(token)
+        
+    # 2. Si el header falló o no existe, intentar con la cookie
+    if not payload:
+        token_from_cookie = request.cookies.get("access_token")
+        if token_from_cookie:
+            payload = verify_token(token_from_cookie)
+            
+    # 3. Si ninguno funcionó, error
+    if not payload:
         raise credentials_exception
     
     user_id: str = payload.get("sub")
