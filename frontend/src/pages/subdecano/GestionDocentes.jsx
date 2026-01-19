@@ -331,6 +331,7 @@ const GestionDocentes = () => {
             <div
               className="modal-content password-modal"
               onClick={e => e.stopPropagation()}
+              onKeyDown={e => e.stopPropagation()}
               role="document"
               tabIndex={-1}
             >
