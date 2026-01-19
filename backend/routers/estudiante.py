@@ -181,7 +181,32 @@ async def listar_solicitudes(current_user: Dict = Depends(get_current_user)):
     
     resultado = []
     for sol in solicitudes:
-        materia = await materias_collection.find_one({"_id": sol["materia_id"]})
+        # Buscar materia - puede ser string o ObjectId
+        materia_id = sol["materia_id"]
+        print(f"🔍 DEBUG: Buscando materia con ID: {materia_id} (tipo: {type(materia_id)})")
+        
+        # Intentar buscar como está
+        materia = await materias_collection.find_one({"_id": materia_id})
+        
+        # Si no se encuentra y es string, intentar como ObjectId
+        if not materia and isinstance(materia_id, str):
+            try:
+                materia = await materias_collection.find_one({"_id": ObjectId(materia_id)})
+                print(f"   ✅ Materia encontrada como ObjectId")
+            except:
+                print(f"   ❌ No se pudo convertir a ObjectId")
+        
+        # Si no se encuentra y es ObjectId, intentar como string
+        if not materia and isinstance(materia_id, ObjectId):
+            materia = await materias_collection.find_one({"_id": str(materia_id)})
+            if materia:
+                print(f"   ✅ Materia encontrada como string")
+        
+        if materia:
+            print(f"   ✅ Materia encontrada: {materia['nombre']}")
+        else:
+            print(f"   ❌ Materia NO encontrada")
+        
         docente = await docentes_collection.find_one({"_id": sol["docente_id"]})
         
         resultado.append(SolicitudResponse(
