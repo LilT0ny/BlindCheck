@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List, Dict
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 from models.schemas import (
     DocenteCreate, DocenteUpdate, DocenteResponse,
     EstudianteCreate, EstudianteResponse,
@@ -13,7 +13,7 @@ from database import (
     docentes_collection, estudiantes_collection, subdecanos_collection,
     solicitudes_collection, materias_collection, mensajes_collection
 )
-from utils.auth import get_current_user
+from utils.auth import get_current_active_subdecano
 from utils.encryption import hash_password, anonymize_name
 
 router = APIRouter(prefix="/api/subdecano", tags=["Subdecano"])
@@ -23,11 +23,9 @@ router = APIRouter(prefix="/api/subdecano", tags=["Subdecano"])
 @router.post("/docentes")
 async def crear_docente(
     docente: DocenteCreateBySubdecano,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Crea un nuevo docente con contraseña por defecto"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Verificar si ya existe
     existe = await docentes_collection.find_one({"email": docente.email})
@@ -69,10 +67,8 @@ async def crear_docente(
     }
 
 @router.get("/docentes")
-async def listar_docentes(current_user: Dict = Depends(get_current_user)):
+async def listar_docentes(current_user: Dict = Depends(get_current_active_subdecano)):
     """Lista todos los docentes"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     docentes = await docentes_collection.find().to_list(length=1000)
     
@@ -94,11 +90,9 @@ async def listar_docentes(current_user: Dict = Depends(get_current_user)):
 async def actualizar_docente(
     docente_id: str,
     datos: DocenteCreateBySubdecano,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Actualiza las materias y datos de un docente"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     update_data = {
         "nombre": datos.nombre,
@@ -119,11 +113,9 @@ async def actualizar_docente(
 @router.put("/docentes/{docente_id}/desactivar")
 async def desactivar_docente(
     docente_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Desactiva un docente (mantiene datos en BD)"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     result = await docentes_collection.update_one(
         {"_id": docente_id},
@@ -138,11 +130,9 @@ async def desactivar_docente(
 @router.delete("/docentes/{docente_id}")
 async def eliminar_docente(
     docente_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Elimina permanentemente un docente de la BD"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     result = await docentes_collection.delete_one({"_id": docente_id})
     
@@ -156,11 +146,9 @@ async def eliminar_docente(
 @router.post("/estudiantes")
 async def crear_estudiante(
     estudiante: EstudianteCreateBySubdecano,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Crea un nuevo estudiante con contraseña por defecto"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     existe = await estudiantes_collection.find_one({"email": estudiante.email})
     if existe:
@@ -201,10 +189,8 @@ async def crear_estudiante(
     }
 
 @router.get("/estudiantes")
-async def listar_estudiantes(current_user: Dict = Depends(get_current_user)):
+async def listar_estudiantes(current_user: Dict = Depends(get_current_active_subdecano)):
     """Lista todos los estudiantes"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     estudiantes = await estudiantes_collection.find().to_list(length=1000)
     
@@ -226,11 +212,9 @@ async def listar_estudiantes(current_user: Dict = Depends(get_current_user)):
 async def actualizar_estudiante(
     estudiante_id: str,
     datos: EstudianteCreateBySubdecano,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Actualiza las materias y datos de un estudiante"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     update_data = {
         "nombre": datos.nombre,
@@ -251,11 +235,9 @@ async def actualizar_estudiante(
 @router.put("/estudiantes/{estudiante_id}/desactivar")
 async def desactivar_estudiante(
     estudiante_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Desactiva un estudiante (mantiene datos en BD)"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     result = await estudiantes_collection.update_one(
         {"_id": estudiante_id},
@@ -270,11 +252,9 @@ async def desactivar_estudiante(
 @router.delete("/estudiantes/{estudiante_id}")
 async def eliminar_estudiante(
     estudiante_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Elimina permanentemente un estudiante de la BD"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     result = await estudiantes_collection.delete_one({"_id": estudiante_id})
     
@@ -286,10 +266,8 @@ async def eliminar_estudiante(
 # =============== GESTIÓN DE SOLICITUDES ===============
 
 @router.get("/solicitudes", response_model=List[SolicitudResponse])
-async def listar_solicitudes(current_user: Dict = Depends(get_current_user)):
+async def listar_solicitudes(current_user: Dict = Depends(get_current_active_subdecano)):
     """Lista todas las solicitudes con datos anonimizados"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     solicitudes = await solicitudes_collection.find().sort("fecha_creacion", -1).to_list(length=1000)
     
@@ -321,11 +299,9 @@ async def listar_solicitudes(current_user: Dict = Depends(get_current_user)):
 async def actualizar_estado_solicitud(
     solicitud_id: str,
     datos: dict,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Acepta o rechaza una solicitud"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     solicitud = await solicitudes_collection.find_one({"_id": ObjectId(solicitud_id)})
     if not solicitud:
@@ -337,7 +313,7 @@ async def actualizar_estado_solicitud(
     
     update_data = {
         "estado": estado,
-        "fecha_actualizacion": datetime.utcnow()
+        "fecha_actualizacion": datetime.now(timezone.utc)
     }
     
     if datos.get("motivo_rechazo"):
@@ -375,7 +351,7 @@ async def actualizar_estado_solicitud(
         
         update_data["docente_recalificador_id"] = docente_seleccionado["_id"]
         update_data["estado"] = "en_revision"
-        update_data["fecha_asignacion"] = datetime.utcnow()
+        update_data["fecha_asignacion"] = datetime.now(timezone.utc)
         
         # Notificar al docente recalificador
         await mensajes_collection.insert_one({
@@ -385,7 +361,7 @@ async def actualizar_estado_solicitud(
             "contenido": "Se te ha asignado automáticamente una nueva solicitud de recalificación para revisar.",
             "tipo": "notificacion",
             "leido": False,
-            "fecha_envio": datetime.utcnow()
+            "fecha_envio": datetime.now(timezone.utc)
         })
     
     await solicitudes_collection.update_one(
@@ -408,7 +384,7 @@ async def actualizar_estado_solicitud(
         "contenido": mensaje_contenido,
         "tipo": "notificacion",
         "leido": False,
-        "fecha_envio": datetime.utcnow()
+        "fecha_envio": datetime.now(timezone.utc)
     })
     
     return {"message": "Estado actualizado exitosamente"}
@@ -418,11 +394,9 @@ async def actualizar_estado_solicitud(
 @router.post("/materias", response_model=MateriaResponse)
 async def crear_materia(
     materia: MateriaCreate,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Crea una nueva materia"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Validar que código no exista
     existe = await materias_collection.find_one({"codigo": materia.codigo})
@@ -431,7 +405,7 @@ async def crear_materia(
     
     nueva_materia = {
         **materia.dict(),
-        "fecha_creacion": datetime.utcnow()
+        "fecha_creacion": datetime.now(timezone.utc)
     }
     
     result = await materias_collection.insert_one(nueva_materia)
@@ -444,10 +418,8 @@ async def crear_materia(
     )
 
 @router.get("/materias", response_model=List[MateriaResponse])
-async def listar_materias(current_user: Dict = Depends(get_current_user)):
+async def listar_materias(current_user: Dict = Depends(get_current_active_subdecano)):
     """Lista todas las materias"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     materias = await materias_collection.find().sort("codigo", 1).to_list(length=1000)
     
@@ -464,11 +436,9 @@ async def listar_materias(current_user: Dict = Depends(get_current_user)):
 @router.get("/materias/{materia_id}", response_model=MateriaResponse)
 async def obtener_materia(
     materia_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Obtiene detalle de una materia"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     materia = await materias_collection.find_one({"_id": ObjectId(materia_id)})
     if not materia:
@@ -485,11 +455,9 @@ async def obtener_materia(
 async def actualizar_materia(
     materia_id: str,
     datos: dict,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Actualiza una materia"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     materia = await materias_collection.find_one({"_id": ObjectId(materia_id)})
     if not materia:
@@ -519,11 +487,9 @@ async def actualizar_materia(
 @router.delete("/materias/{materia_id}")
 async def eliminar_materia(
     materia_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Elimina una materia"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Validar que no tenga solicitudes
     solicitudes_count = await solicitudes_collection.count_documents({"materia_id": materia_id})
@@ -545,11 +511,9 @@ async def eliminar_materia(
 @router.get("/solicitudes/{solicitud_id}/docentes-disponibles")
 async def obtener_docentes_disponibles(
     solicitud_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Obtiene lista de TODOS los docentes de la carrera (excluyendo el docente original)"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Obtener la solicitud
     solicitud = await solicitudes_collection.find_one({"_id": ObjectId(solicitud_id)})
@@ -599,11 +563,9 @@ async def obtener_docentes_disponibles(
 async def asignar_docente_recalificador(
     solicitud_id: str,
     datos: dict,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Asigna un docente recalificador a una solicitud aprobada"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     docente_recalificador_id = datos.get("docente_recalificador_id")
     if not docente_recalificador_id:
@@ -646,7 +608,7 @@ async def asignar_docente_recalificador(
             "$set": {
                 "docente_recalificador_id": docente_recalificador_id,
                 "estado": "en_revision",
-                "fecha_asignacion": datetime.utcnow()
+                "fecha_asignacion": datetime.now(timezone.utc)
             }
         }
     )
@@ -659,7 +621,7 @@ async def asignar_docente_recalificador(
         "contenido": f"Se te ha asignado una nueva solicitud de recalificación para revisar.",
         "tipo": "notificacion",
         "leido": False,
-        "fecha_envio": datetime.utcnow()
+        "fecha_envio": datetime.now(timezone.utc)
     })
     
     # Notificar al estudiante
@@ -670,7 +632,7 @@ async def asignar_docente_recalificador(
         "contenido": "Se ha asignado un docente para recalificar tu solicitud.",
         "tipo": "notificacion",
         "leido": False,
-        "fecha_envio": datetime.utcnow()
+        "fecha_envio": datetime.now(timezone.utc)
     })
     
     return {"message": "Docente asignado exitosamente"}
@@ -678,10 +640,8 @@ async def asignar_docente_recalificador(
 # =============== GESTIÓN DE RESET DE CONTRASEÑA ===============
 
 @router.get("/solicitudes-reset-password")
-async def listar_solicitudes_reset(current_user: Dict = Depends(get_current_user)):
+async def listar_solicitudes_reset(current_user: Dict = Depends(get_current_active_subdecano)):
     """Lista todas las solicitudes de reset de contraseña"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     from database import reset_password_collection
     
@@ -702,11 +662,9 @@ async def listar_solicitudes_reset(current_user: Dict = Depends(get_current_user
 @router.post("/generar-password-reset/{solicitud_id}")
 async def generar_password_reset(
     solicitud_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Genera una contraseña temporal para una solicitud de reset"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     from database import reset_password_collection
     import secrets
@@ -754,7 +712,7 @@ async def generar_password_reset(
             "$set": {
                 "estado": "completado",
                 "password_temporal": password_temporal,
-                "fecha_completacion": datetime.utcnow()
+                "fecha_completacion": datetime.now(timezone.utc)
             }
         }
     )
@@ -773,11 +731,9 @@ from models.schemas import LogResponse
 @router.get("/logs", response_model=List[LogResponse])
 async def obtener_logs(
     limit: int = 100,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_subdecano)
 ):
     """Obtiene los logs del sistema (últimos 100 por defecto)"""
-    if current_user["role"] != "subdecano":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     from database import logs_collection
     

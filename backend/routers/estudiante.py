@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List, Dict
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 from models.schemas import (
     SolicitudCreate, SolicitudResponse, EstadoSolicitud,
     EstudianteUpdate, EstudianteResponse, MensajeResponse,
@@ -12,21 +12,17 @@ from database import (
     mensajes_collection, materias_collection, calificaciones_collection,
     docentes_collection, evidencias_collection
 )
-from utils.auth import get_current_user
+from utils.auth import get_current_active_estudiante
 from utils.logger import log_action
 from utils.encryption import anonymize_name, anonymize_profesor
 
 router = APIRouter(prefix="/api/estudiante", tags=["Estudiante"])
 
 @router.get("/perfil", response_model=EstudianteResponse)
-async def get_perfil(current_user: Dict = Depends(get_current_user)):
+@router.get("/perfil", response_model=EstudianteResponse)
+async def get_perfil(current_user: Dict = Depends(get_current_active_estudiante)):
     """Obtiene el perfil del estudiante actual"""
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
-    
-    estudiante = await estudiantes_collection.find_one({"_id": current_user["user_id"]})
-    if not estudiante:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estudiante no encontrado")
+    estudiante = current_user
     
     return EstudianteResponse(
         id=str(estudiante["_id"]),
@@ -37,23 +33,22 @@ async def get_perfil(current_user: Dict = Depends(get_current_user)):
     )
 
 @router.put("/perfil", response_model=EstudianteResponse)
+@router.put("/perfil", response_model=EstudianteResponse)
 async def actualizar_perfil(
     datos: EstudianteUpdate,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_estudiante)
 ):
     """Actualiza los datos del estudiante"""
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     update_data = {k: v for k, v in datos.dict(exclude_unset=True).items()}
     
     if update_data:
         await estudiantes_collection.update_one(
-            {"_id": current_user["user_id"]},
+            {"_id": current_user["_id"]},
             {"$set": update_data}
         )
     
-    estudiante = await estudiantes_collection.find_one({"_id": current_user["user_id"]})
+    estudiante = await estudiantes_collection.find_one({"_id": current_user["_id"]})
     
     return EstudianteResponse(
         id=str(estudiante["_id"]),
@@ -64,13 +59,12 @@ async def actualizar_perfil(
     )
 
 @router.post("/solicitudes", response_model=SolicitudResponse)
+@router.post("/solicitudes", response_model=SolicitudResponse)
 async def crear_solicitud(
     solicitud: SolicitudCreate,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_estudiante)
 ):
     """Crea una nueva solicitud de recalificación"""
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Verificar que la materia existe
     materia = await materias_collection.find_one({"_id": solicitud.materia_id})
@@ -98,10 +92,10 @@ async def crear_solicitud(
         )
     
     # Obtener datos del estudiante para anonimización
-    estudiante = await estudiantes_collection.find_one({"_id": current_user["user_id"]})
+    estudiante = current_user
     
     nueva_solicitud = {
-        "estudiante_id": current_user["user_id"],
+        "estudiante_id": current_user["_id"],
         "estudiante_nombre_anonimo": anonymize_name(estudiante['nombre'], str(estudiante["_id"])),
         "materia_id": solicitud.materia_id,
         "docente_id": solicitud.docente_id,
@@ -111,26 +105,26 @@ async def crear_solicitud(
         "calificacion_actual": solicitud.calificacion_actual,
         "motivo": solicitud.motivo,
         "estado": EstadoSolicitud.PENDIENTE,
-        "fecha_creacion": datetime.utcnow(),
-        "fecha_actualizacion": datetime.utcnow()
+        "fecha_creacion": datetime.now(timezone.utc),
+        "fecha_actualizacion": datetime.now(timezone.utc)
     }
     
     result = await solicitudes_collection.insert_one(nueva_solicitud)
     
     # Crear notificación
     await mensajes_collection.insert_one({
-        "destinatario_id": current_user["user_id"],
+        "destinatario_id": current_user["_id"],
         "remitente": "Sistema",
         "asunto": "Solicitud creada",
         "contenido": f"Tu solicitud de recalificación para {materia['nombre']} ha sido creada exitosamente y está pendiente de aprobación.",
         "tipo": "info",
         "leido": False,
-        "fecha_envio": datetime.utcnow()
+        "fecha_envio": datetime.now(timezone.utc)
     })
     
     # REGISTRAR LOG
     await log_action(
-        current_user["user_id"], 
+        current_user["_id"], 
         "estudiante", 
         "CREAR_SOLICITUD", 
         f"Solicitud creada: {materia['nombre']} - {solicitud.aporte}"
@@ -154,13 +148,12 @@ async def crear_solicitud(
     )
 
 @router.get("/solicitudes", response_model=List[SolicitudResponse])
-async def listar_solicitudes(current_user: Dict = Depends(get_current_user)):
+@router.get("/solicitudes", response_model=List[SolicitudResponse])
+async def listar_solicitudes(current_user: Dict = Depends(get_current_active_estudiante)):
     """Lista todas las solicitudes del estudiante"""
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     solicitudes = await solicitudes_collection.find(
-        {"estudiante_id": current_user["user_id"]}
+        {"estudiante_id": current_user["_id"]}
     ).sort("fecha_creacion", -1).to_list(length=100)
     
     resultado = []
@@ -191,17 +184,16 @@ async def listar_solicitudes(current_user: Dict = Depends(get_current_user)):
     return resultado
 
 @router.get("/solicitudes/{solicitud_id}", response_model=SolicitudResponse)
+@router.get("/solicitudes/{solicitud_id}", response_model=SolicitudResponse)
 async def obtener_solicitud(
     solicitud_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_estudiante)
 ):
     """Obtiene el detalle de una solicitud específica"""
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     solicitud = await solicitudes_collection.find_one({
         "_id": ObjectId(solicitud_id),
-        "estudiante_id": current_user["user_id"]
+        "estudiante_id": current_user["_id"]
     })
     
     if not solicitud:
@@ -247,13 +239,12 @@ async def obtener_solicitud(
     )
 
 @router.get("/mensajes", response_model=List[MensajeResponse])
-async def listar_mensajes(current_user: Dict = Depends(get_current_user)):
+@router.get("/mensajes", response_model=List[MensajeResponse])
+async def listar_mensajes(current_user: Dict = Depends(get_current_active_estudiante)):
     """Lista todos los mensajes del estudiante"""
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     mensajes = await mensajes_collection.find(
-        {"destinatario_id": current_user["user_id"]}
+        {"destinatario_id": current_user["_id"]}
     ).sort("fecha_envio", -1).to_list(length=100)
     
     return [
@@ -271,18 +262,17 @@ async def listar_mensajes(current_user: Dict = Depends(get_current_user)):
     ]
 
 @router.put("/mensajes/{mensaje_id}/leer")
+@router.put("/mensajes/{mensaje_id}/leer")
 async def marcar_mensaje_leido(
     mensaje_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_estudiante)
 ):
     """Marca un mensaje como leído"""
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     result = await mensajes_collection.update_one(
         {
             "_id": ObjectId(mensaje_id),
-            "destinatario_id": current_user["user_id"]
+            "destinatario_id": current_user["_id"]
         },
         {"$set": {"leido": True}}
     )
@@ -295,18 +285,15 @@ async def marcar_mensaje_leido(
 # =============== DATOS AUXILIARES ===============
 
 @router.get("/materias")
-async def obtener_materias(current_user: Dict = Depends(get_current_user)):
+@router.get("/materias")
+async def obtener_materias(current_user: Dict = Depends(get_current_active_estudiante)):
     """Obtiene las materias que está cursando el estudiante"""
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     print(f"\n📚 DEBUG MATERIAS ESTUDIANTE:")
-    print(f"   Estudiante ID: {current_user['user_id']}")
+    print(f"   Estudiante ID: {current_user['_id']}")
     
     # Obtener el estudiante
-    estudiante = await estudiantes_collection.find_one({"_id": current_user["user_id"]})
-    if not estudiante:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estudiante no encontrado")
+    estudiante = current_user
     
     materias_cursando = estudiante.get("materias_cursando", [])
     print(f"   Materias cursando: {materias_cursando}")
@@ -336,10 +323,9 @@ async def obtener_materias(current_user: Dict = Depends(get_current_user)):
     ]
 
 @router.get("/docentes")
-async def obtener_docentes(current_user: Dict = Depends(get_current_user)):
+@router.get("/docentes")
+async def obtener_docentes(current_user: Dict = Depends(get_current_active_estudiante)):
     """Obtiene todos los docentes disponibles con sus materias asignadas"""
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     docentes = await docentes_collection.find().to_list(100)
     
@@ -353,18 +339,15 @@ async def obtener_docentes(current_user: Dict = Depends(get_current_user)):
     ]
 
 @router.get("/opciones-solicitud")
-async def obtener_opciones_solicitud(current_user: Dict = Depends(get_current_user)):
+@router.get("/opciones-solicitud")
+async def obtener_opciones_solicitud(current_user: Dict = Depends(get_current_active_estudiante)):
     """
     Obtiene SOLO las opciones de solicitud que tienen evidencias disponibles.
     Retorna: lista de {docente_id, docente_nombre, materia_id, materia_nombre, grupo, aporte}
     """
-    if current_user["role"] != "estudiante":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Obtener el estudiante
-    estudiante = await estudiantes_collection.find_one({"_id": current_user["user_id"]})
-    if not estudiante:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estudiante no encontrado")
+    estudiante = current_user
     
     materias_cursando = estudiante.get("materias_cursando", [])
     

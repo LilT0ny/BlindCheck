@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Response, Request
 
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from typing import Dict
 from models.schemas import LoginRequest, TokenResponse, UserRole, CambioPasswordForzado, SolicitudResetPassword
 from database import estudiantes_collection, docentes_collection, subdecanos_collection, reset_password_collection
@@ -172,7 +172,7 @@ async def solicitar_reset_password(datos: SolicitudResetPassword):
         "user_id": str(user["_id"]),
         "rol": rol,
         "estado": "pendiente",
-        "fecha_solicitud": datetime.utcnow(),
+        "fecha_solicitud": datetime.now(timezone.utc),
         "fecha_completacion": None,
         "password_temporal": None
     }

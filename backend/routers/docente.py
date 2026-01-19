@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Body
 from typing import List, Dict
 from bson import ObjectId
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import os
 from pathlib import Path
@@ -19,9 +19,10 @@ from database import (
     calificaciones_collection, solicitudes_collection,
     materias_collection, mensajes_collection, estudiantes_collection
 )
-from utils.auth import get_current_user
+from utils.auth import get_current_active_docente
 from utils.logger import log_action
 from utils.encryption import anonymize_name, anonymize_profesor
+from utils.image import correct_image_orientation
 
 router = APIRouter(prefix="/api/docente", tags=["Docente"])
 
@@ -31,54 +32,16 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 TEMP_DIR = Path("uploads/temp")
 TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
-# Función para corregir orientación EXIF
-def correct_image_orientation(img):
-    """Corrige la orientación de la imagen según metadatos EXIF"""
-    try:
-        # Obtener información EXIF
-        exif = img._getexif()
-        if exif is None:
-            return img
-        
-        # Buscar el tag de orientación
-        orientation_key = None
-        for tag, value in ExifTags.TAGS.items():
-            if value == 'Orientation':
-                orientation_key = tag
-                break
-        
-        if orientation_key is None:
-            return img
-            
-        orientation = exif.get(orientation_key)
-        
-        # Aplicar rotación según orientación EXIF
-        if orientation == 3:
-            img = img.rotate(180, expand=True)
-        elif orientation == 6:
-            img = img.rotate(270, expand=True)
-        elif orientation == 8:
-            img = img.rotate(90, expand=True)
-            
-        print(f"   📐 Orientación EXIF corregida: {orientation}")
-        
-    except (AttributeError, KeyError, IndexError, TypeError) as e:
-        # Si no hay EXIF o hay error, devolver imagen original
-        print(f"   ℹ️ No se pudo leer EXIF o no tiene orientación: {e}")
-        pass
-    return img
+# Función para corregir orientación EXIF eliminada -> movida a utils.image
 
 # =============== PERFIL DEL DOCENTE ===============
 
 @router.get("/perfil", response_model=DocenteResponse)
-async def get_perfil(current_user: Dict = Depends(get_current_user)):
+@router.get("/perfil", response_model=DocenteResponse)
+async def get_perfil(current_user: Dict = Depends(get_current_active_docente)):
     """Obtiene el perfil del docente actual"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
-    
-    docente = await docentes_collection.find_one({"_id": current_user["user_id"]})
-    if not docente:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Docente no encontrado")
+    # Verificación de rol y existencia hecha por dependencia
+    docente = current_user
     
     return DocenteResponse(
         id=str(docente["_id"]),
@@ -90,14 +53,12 @@ async def get_perfil(current_user: Dict = Depends(get_current_user)):
     )
 
 @router.put("/perfil", response_model=DocenteResponse)
+@router.put("/perfil", response_model=DocenteResponse)
 async def actualizar_perfil(
     datos: DocenteUpdate,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_docente)
 ):
     """Actualiza los datos del docente (excepto materias y grupos)"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
-    
     # Excluir materias y grupos de la actualización (solo el subdecano puede cambiarlos)
     update_data = {
         k: v for k, v in datos.dict(exclude_unset=True, exclude={"materias", "grupos_asignados"}).items()
@@ -123,24 +84,13 @@ async def actualizar_perfil(
 # =============== GESTIÓN DE EVIDENCIAS ===============
 
 @router.get("/materias")
-async def listar_materias_asignadas(current_user: Dict = Depends(get_current_user)):
+@router.get("/materias")
+async def listar_materias_asignadas(current_user: Dict = Depends(get_current_active_docente)):
     """Lista todas las materias asignadas al docente"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
-    docente = await docentes_collection.find_one({"_id": current_user["user_id"]})
-    if not docente:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Docente no encontrado")
-    
-    print(f"\n📚 DEBUG MATERIAS:")
-    print(f"   Docente: {docente.get('nombre')}")
-    print(f"   materias en BD: {docente.get('materias', [])}")
-    print(f"   Tipo: {type(docente.get('materias', []))}")
+    docente = current_user
     
     materias_ids_str = docente.get("materias", [])
-    if materias_ids_str:
-        print(f"   Primer elemento tipo: {type(materias_ids_str[0])}")
-        print(f"   Primer elemento valor: {materias_ids_str[0]}")
     
     # Los IDs en MongoDB son strings como 'CS-301', no ObjectIds
     print(f"   IDs a buscar: {materias_ids_str}")
@@ -170,10 +120,9 @@ async def listar_materias_asignadas(current_user: Dict = Depends(get_current_use
     return resultado
 
 @router.get("/estudiantes")
-async def listar_estudiantes(current_user: Dict = Depends(get_current_user)):
+@router.get("/estudiantes")
+async def listar_estudiantes(current_user: Dict = Depends(get_current_active_docente)):
     """Lista todos los estudiantes para vincular con evidencias"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     estudiantes = await estudiantes_collection.find().sort("nombre", 1).to_list(length=1000)
     
@@ -188,6 +137,7 @@ async def listar_estudiantes(current_user: Dict = Depends(get_current_user)):
     return resultado
 
 @router.post("/evidencias")
+@router.post("/evidencias")
 async def subir_evidencia(
     archivo: UploadFile = File(...),
     estudiante_id: str = Form(...),
@@ -195,14 +145,12 @@ async def subir_evidencia(
     grupo: str = Form(...),
     aporte: str = Form(...),
     descripcion: str = Form(...),
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_docente)
 ):
     """Sube evidencia (foto) con nombre hasheado para mantener anonimato"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Verificar que el docente tenga asignada esta materia
-    docente = await docentes_collection.find_one({"_id": current_user["user_id"]})
+    docente = current_user
     if str(materia_id) not in docente.get("materias", []):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes asignada esta materia")
     
@@ -212,7 +160,7 @@ async def subir_evidencia(
     
     # Generar nombre hasheado para el archivo
     # Hash basado en: docente_id + materia_id + grupo + aporte + timestamp
-    hash_input = f"{current_user['user_id']}{materia_id}{grupo}{aporte}{datetime.utcnow().isoformat()}"
+    hash_input = f"{current_user['user_id']}{materia_id}{grupo}{aporte}{datetime.now(timezone.utc).isoformat()}"
     file_hash = hashlib.sha256(hash_input.encode()).hexdigest()[:16]
     
     # Obtener extensión del archivo original
@@ -239,7 +187,7 @@ async def subir_evidencia(
         "archivo_nombre_hash": hashed_filename,
         "archivo_url": f"/uploads/evidencias/{hashed_filename}",
         "content_type": archivo.content_type,
-        "fecha_subida": datetime.utcnow()
+        "fecha_subida": datetime.now(timezone.utc)
     }
     
     result = await evidencias_collection.insert_one(nueva_evidencia)
@@ -260,33 +208,23 @@ async def subir_evidencia(
     }
 
 @router.post("/evidencias/upload-temp")
+@router.post("/evidencias/upload-temp")
 async def subir_evidencia_temporal(
     archivo: UploadFile = File(...),
     estudiante_id: str = Form(...),
     materia_id: str = Form(...),
     grupo: str = Form(...),
     aporte: str = Form(...),
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_docente)
 ):
     """Sube evidencia temporal para previsualización y recorte"""
-    print(f"\n🔍 DEBUG UPLOAD-TEMP:")
-    print(f"   archivo: {archivo.filename if archivo else 'None'}")
-    print(f"   content_type: {archivo.content_type if archivo else 'None'}")
-    print(f"   estudiante_id: {estudiante_id}")
-    print(f"   materia_id: {materia_id}")
-    print(f"   grupo: {grupo}")
-    print(f"   aporte: {aporte}")
-    print(f"   current_user: {current_user.get('user_id')}")
-    
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Validar que sea una imagen
     if not archivo.content_type.startswith('image/'):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Solo se permiten archivos de imagen")
     
     # Generar ID temporal único
-    temp_id = hashlib.sha256(f"{current_user['user_id']}{datetime.utcnow().isoformat()}".encode()).hexdigest()[:16]
+    temp_id = hashlib.sha256(f"{current_user['user_id']}{datetime.now(timezone.utc).isoformat()}".encode()).hexdigest()[:16]
     file_extension = os.path.splitext(archivo.filename)[1]
     temp_filename = f"{temp_id}{file_extension}"
     
@@ -304,13 +242,12 @@ async def subir_evidencia_temporal(
     }
 
 @router.post("/evidencias/recortar")
+@router.post("/evidencias/recortar")
 async def recortar_area_y_guardar(
     datos: Dict = Body(...),
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_docente)
 ):
     """Recorta el área seleccionada y guarda la evidencia final"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     temp_filename = datos.get("temp_filename")
     estudiante_id = datos.get("estudiante_id")
@@ -386,7 +323,7 @@ async def recortar_area_y_guardar(
             print(f"   ⚠️ NO se recortará (área vacía o width=0)")
         
         # Generar nombre hasheado final
-        hash_input = f"{current_user['user_id']}{estudiante_id}{materia_id}{grupo}{aporte}{datetime.utcnow().isoformat()}"
+        hash_input = f"{current_user['user_id']}{estudiante_id}{materia_id}{grupo}{aporte}{datetime.now(timezone.utc).isoformat()}"
         file_hash = hashlib.sha256(hash_input.encode()).hexdigest()[:16]
         file_extension = os.path.splitext(temp_filename)[1]
         hashed_filename = f"{file_hash}{file_extension}"
@@ -416,7 +353,7 @@ async def recortar_area_y_guardar(
             "archivo_nombre_hash": hashed_filename,
             "archivo_url": f"/uploads/evidencias/{hashed_filename}",
             "recortada": crop_area is not None and crop_area.get("width", 0) > 0,
-            "fecha_subida": datetime.utcnow()
+            "fecha_subida": datetime.now(timezone.utc)
         }
         
         result = await evidencias_collection.insert_one(nueva_evidencia)
@@ -436,10 +373,9 @@ async def recortar_area_y_guardar(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error al procesar imagen: {str(e)}")
 
 @router.get("/evidencias")
-async def listar_evidencias(current_user: Dict = Depends(get_current_user)):
+@router.get("/evidencias")
+async def listar_evidencias(current_user: Dict = Depends(get_current_active_docente)):
     """Lista todas las evidencias subidas por el docente"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     evidencias = await evidencias_collection.find(
         {"docente_id": current_user["user_id"]}
@@ -467,10 +403,9 @@ async def listar_evidencias(current_user: Dict = Depends(get_current_user)):
 # =============== RECALIFICACIONES ===============
 
 @router.get("/recalificaciones", response_model=List[SolicitudResponse])
-async def listar_recalificaciones_asignadas(current_user: Dict = Depends(get_current_user)):
+@router.get("/recalificaciones", response_model=List[SolicitudResponse])
+async def listar_recalificaciones_asignadas(current_user: Dict = Depends(get_current_active_docente)):
     """Lista todas las solicitudes de recalificación asignadas al docente"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     print(f"\n🔄 DEBUG RECALIFICACIONES ASIGNADAS:")
     print(f"   Docente ID: {current_user['user_id']}")
@@ -507,14 +442,13 @@ async def listar_recalificaciones_asignadas(current_user: Dict = Depends(get_cur
     return resultado
 
 @router.post("/recalificaciones/{solicitud_id}/calificar")
+@router.post("/recalificaciones/{solicitud_id}/calificar")
 async def calificar_solicitud(
     solicitud_id: str,
     calificacion: dict,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_docente)
 ):
     """Califica una solicitud de recalificación"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Verificar que la solicitud existe y está asignada a este docente como RECALIFICADOR
     solicitud = await solicitudes_collection.find_one({
@@ -541,7 +475,7 @@ async def calificar_solicitud(
                 "estado": "calificada",
                 "calificacion_nueva": nota,
                 "comentario_docente": calificacion.get("comentario", ""),
-                "fecha_actualizacion": datetime.utcnow()
+                "fecha_actualizacion": datetime.now(timezone.utc)
             }
         }
     )
@@ -554,7 +488,7 @@ async def calificar_solicitud(
         "contenido": f"Tu solicitud ha sido calificada. Nueva nota: {nota}",
         "tipo": "notificacion",
         "leido": False,
-        "fecha_envio": datetime.utcnow()
+        "fecha_envio": datetime.now(timezone.utc)
     })
     
     # REGISTRAR LOG
@@ -568,13 +502,12 @@ async def calificar_solicitud(
     return {"message": "Calificación registrada exitosamente", "nota": nota}
 
 @router.get("/recalificaciones/{solicitud_id}/evidencia")
+@router.get("/recalificaciones/{solicitud_id}/evidencia")
 async def obtener_evidencia_solicitud(
     solicitud_id: str,
-    current_user: Dict = Depends(get_current_user)
+    current_user: Dict = Depends(get_current_active_docente)
 ):
     """Obtiene la evidencia adjunta a una solicitud de recalificación"""
-    if current_user["role"] != "docente":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
     # Verificar que la solicitud existe y está asignada a este docente como recalificador
     solicitud = await solicitudes_collection.find_one({"_id": ObjectId(solicitud_id)})
