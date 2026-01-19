@@ -147,7 +147,7 @@ const Recalificaciones = () => {
               <tr>
                 <th>Estudiante (Anónimo)</th>
                 <th>Materia</th>
-                
+
                 <th>Aporte</th>
                 <th>Calif. Actual</th>
                 <th>Motivo</th>
@@ -220,8 +220,22 @@ const Recalificaciones = () => {
 
         {/* Modal de Calificación */}
         {showModal && solicitudSeleccionada && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-overlay"
+            onClick={() => setShowModal(false)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') setShowModal(false);
+            }}
+            aria-label="Cerrar modal"
+          >
+            <div
+              className="modal-content"
+              onClick={(e) => e.stopPropagation()}
+              role="document"
+              tabIndex={-1}
+            >
               <div className="modal-header">
                 <h2>Calificar Solicitud</h2>
                 <button

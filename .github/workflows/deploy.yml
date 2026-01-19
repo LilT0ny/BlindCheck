@@ -58,14 +58,14 @@ jobs:
             docker compose ps
             
             # Si el frontend no sube, nos muestra el error en los logs de GitHub
-            if [ $(docker inspect -f '{{.State.Running}}' blindcheck-frontend) != "true" ]; then
+            if [[ $(docker inspect -f '{{.State.Running}}' blindcheck-frontend) != "true" ]]; then
               echo "❌ ERROR: El frontend falló al iniciar. Mostrando logs:"
               docker logs blindcheck-frontend
               exit 1
             fi
 
             # Verificación específica para el backend
-            if [ $(docker inspect -f '{{.State.Running}}' blindcheck-backend) != "true" ]; then
+            if [[ $(docker inspect -f '{{.State.Running}}' blindcheck-backend) != "true" ]]; then
               echo "❌ ERROR: El backend falló al iniciar. Mostrando logs:"
               docker logs blindcheck-backend
               exit 1

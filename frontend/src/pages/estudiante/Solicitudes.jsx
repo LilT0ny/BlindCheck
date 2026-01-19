@@ -150,8 +150,22 @@ const Solicitudes = () => {
 
         {/* Modal de Detalles */}
         {showModal && solicitudSeleccionada && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-overlay"
+            onClick={() => setShowModal(false)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') setShowModal(false);
+            }}
+            aria-label="Cerrar modal"
+          >
+            <div
+              className="modal-content"
+              onClick={(e) => e.stopPropagation()}
+              role="document"
+              tabIndex={-1}
+            >
               <div className="modal-header">
                 <h2>Detalles de la Solicitud</h2>
                 <button

@@ -171,17 +171,35 @@ const GestionMaterias = () => {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => { setShowModal(false); resetForm(); }}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div
+          className="modal-overlay"
+          onClick={() => { setShowModal(false); resetForm(); }}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              setShowModal(false);
+              resetForm();
+            }
+          }}
+          aria-label="Cerrar modal"
+        >
+          <div
+            className="modal-content"
+            onClick={e => e.stopPropagation()}
+            role="document"
+            tabIndex={-1}
+          >
             <div className="modal-header">
               <h3>{editando ? <><Pencil className="inline mr-2" size={20} /> Editar Materia</> : <><Plus className="inline mr-2" size={20} /> Nueva Materia</>}</h3>
               <button className="close-btn" onClick={() => { setShowModal(false); resetForm(); }}>✕</button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Código de Materia *</label>
+                <label htmlFor="codigo">Código de Materia *</label>
                 <input
                   type="text"
+                  id="codigo"
                   name="codigo"
                   value={formData.codigo}
                   onChange={handleInputChange}
@@ -191,9 +209,10 @@ const GestionMaterias = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Nombre *</label>
+                <label htmlFor="nombre">Nombre *</label>
                 <input
                   type="text"
+                  id="nombre"
                   name="nombre"
                   value={formData.nombre}
                   onChange={handleInputChange}
@@ -202,8 +221,9 @@ const GestionMaterias = () => {
                 />
               </div>
               <div className="form-group">
-                <label>Descripción</label>
+                <label htmlFor="descripcion">Descripción</label>
                 <textarea
+                  id="descripcion"
                   name="descripcion"
                   value={formData.descripcion}
                   onChange={handleInputChange}

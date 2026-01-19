@@ -316,8 +316,24 @@ const Evidencias = () => {
 
         {/* Modal para subir evidencia */}
         {showModal && (
-          <div className="modal-overlay" onClick={() => !uploading && handleCancelar()}>
-            <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-overlay"
+            onClick={() => !uploading && handleCancelar()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                if (!uploading) handleCancelar();
+              }
+            }}
+            aria-label="Cerrar modal"
+          >
+            <div
+              className="modal-content modal-large"
+              onClick={(e) => e.stopPropagation()}
+              role="document"
+              tabIndex={-1}
+            >
               <div className="modal-header">
                 <div>
                   <h2>Subir Nueva Evidencia</h2>
@@ -335,8 +351,14 @@ const Evidencias = () => {
               {step === 1 && (
                 <form onSubmit={handleUploadTemp}>
                   <div className="form-group">
-                    <label>Estudiante *</label>
-                    <select name="estudiante_id" value={formData.estudiante_id} onChange={handleChange} required>
+                    <label htmlFor="estudiante_id">Estudiante *</label>
+                    <select
+                      id="estudiante_id"
+                      name="estudiante_id"
+                      value={formData.estudiante_id}
+                      onChange={handleChange}
+                      required
+                    >
                       <option value="">Selecciona el estudiante</option>
                       {estudiantes.map((est) => (
                         <option key={est.id} value={est.id}>
@@ -347,8 +369,14 @@ const Evidencias = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Materia *</label>
-                    <select name="materia_id" value={formData.materia_id} onChange={handleChange} required>
+                    <label htmlFor="materia_id">Materia *</label>
+                    <select
+                      id="materia_id"
+                      name="materia_id"
+                      value={formData.materia_id}
+                      onChange={handleChange}
+                      required
+                    >
                       <option value="">Selecciona una materia</option>
                       {materias.map((mat) => (
                         <option key={mat.id} value={mat.id}>
@@ -360,13 +388,27 @@ const Evidencias = () => {
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label>Grupo *</label>
-                      <input type="text" name="grupo" value={formData.grupo} onChange={handleChange} placeholder="Ej: A1" required />
+                      <label htmlFor="grupo">Grupo *</label>
+                      <input
+                        type="text"
+                        id="grupo"
+                        name="grupo"
+                        value={formData.grupo}
+                        onChange={handleChange}
+                        placeholder="Ej: A1"
+                        required
+                      />
                     </div>
 
                     <div className="form-group">
-                      <label>Aporte *</label>
-                      <select name="aporte" value={formData.aporte} onChange={handleChange} required>
+                      <label htmlFor="aporte">Aporte *</label>
+                      <select
+                        id="aporte"
+                        name="aporte"
+                        value={formData.aporte}
+                        onChange={handleChange}
+                        required
+                      >
                         <option value="">Selecciona</option>
                         <option value="Prueba 1">Prueba 1</option>
                         <option value="Examen 1">Examen 1</option>
@@ -377,8 +419,9 @@ const Evidencias = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Descripción *</label>
+                    <label htmlFor="descripcion">Descripción *</label>
                     <textarea
+                      id="descripcion"
                       name="descripcion"
                       value={formData.descripcion}
                       onChange={handleChange}
@@ -389,8 +432,14 @@ const Evidencias = () => {
                   </div>
 
                   <div className="form-group">
-                    <label>Foto de Evidencia *</label>
-                    <input type="file" accept="image/*" onChange={handleFileChange} required />
+                    <label htmlFor="archivo">Foto de Evidencia *</label>
+                    <input
+                      type="file"
+                      id="archivo"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      required
+                    />
                     <p className="text-xs text-gray mt-1">📸 En el siguiente paso podrás marcar el área con el nombre para eliminarlo</p>
                   </div>
 
@@ -470,8 +519,22 @@ const Evidencias = () => {
 
         {/* Modal para ver detalle */}
         {showDetalleModal && evidenciaSeleccionada && (
-          <div className="modal-overlay" onClick={handleCerrarDetalle}>
-            <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-overlay"
+            onClick={handleCerrarDetalle}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') handleCerrarDetalle();
+            }}
+            aria-label="Cerrar detalle"
+          >
+            <div
+              className="modal-content modal-large"
+              onClick={(e) => e.stopPropagation()}
+              role="document"
+              tabIndex={-1}
+            >
               <div className="modal-header">
                 <h2 className="flex items-center gap-2">
                   <Camera className="w-6 h-6" /> Detalle de Evidencia

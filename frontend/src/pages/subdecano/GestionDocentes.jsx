@@ -44,13 +44,13 @@ const GestionDocentes = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validar dominio del correo
     if (!formData.email.endsWith('@blindcheck.edu')) {
       setAlert({ show: true, type: 'error', title: 'Error', message: 'El correo debe ser del dominio @blindcheck.edu' });
       return;
     }
-    
+
     try {
       if (editando) {
         await api.put(`/subdecano/docentes/${editando}`, formData);
@@ -228,17 +228,32 @@ const GestionDocentes = () => {
 
         {/* Modal de Formulario */}
         {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div
+            className="modal-overlay"
+            onClick={() => setShowModal(false)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') setShowModal(false);
+            }}
+            aria-label="Cerrar modal"
+          >
+            <div
+              className="modal-content"
+              onClick={e => e.stopPropagation()}
+              role="document"
+              tabIndex={-1}
+            >
               <div className="modal-header">
                 <h3>{editando ? <><Pencil className="inline mr-2" size={20} /> Editar Docente</> : <><Plus className="inline mr-2" size={20} /> Nuevo Docente</>}</h3>
                 <button className="btn-close" onClick={() => setShowModal(false)}>✖</button>
               </div>
               <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <label>Email *</label>
+                  <label htmlFor="email">Email *</label>
                   <input
                     type="email"
+                    id="email"
                     className="form-control"
                     value={formData.email}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
@@ -248,9 +263,10 @@ const GestionDocentes = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Nombre Completo *</label>
+                  <label htmlFor="nombre">Nombre Completo *</label>
                   <input
                     type="text"
+                    id="nombre"
                     className="form-control"
                     value={formData.nombre}
                     onChange={e => setFormData({ ...formData, nombre: e.target.value })}
@@ -259,9 +275,10 @@ const GestionDocentes = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Carrera *</label>
+                  <label htmlFor="carrera">Carrera *</label>
                   <input
                     type="text"
+                    id="carrera"
                     className="form-control"
                     value={formData.carrera}
                     onChange={e => setFormData({ ...formData, carrera: e.target.value })}
@@ -300,8 +317,22 @@ const GestionDocentes = () => {
 
         {/* Modal de Contraseña Temporal */}
         {showPasswordModal && (
-          <div className="modal-overlay" onClick={() => setShowPasswordModal(false)}>
-            <div className="modal-content password-modal" onClick={e => e.stopPropagation()}>
+          <div
+            className="modal-overlay"
+            onClick={() => setShowPasswordModal(false)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') setShowPasswordModal(false);
+            }}
+            aria-label="Cerrar modal"
+          >
+            <div
+              className="modal-content password-modal"
+              onClick={e => e.stopPropagation()}
+              role="document"
+              tabIndex={-1}
+            >
               <div className="modal-header">
                 <h3><KeyRound className="inline-block mr-2" size={24} /> Credenciales Generadas</h3>
                 <button className="btn-close" onClick={() => setShowPasswordModal(false)}>✖</button>

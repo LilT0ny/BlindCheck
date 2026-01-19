@@ -12,7 +12,7 @@ async def log_action(usuario_id: str, rol: str, accion: str, detalle: str = None
             "rol": rol,
             "accion": accion,
             "detalle": detalle,
-            "fecha": datetime.utcnow(),
+            "fecha": datetime.now(timezone.utc),
             "ip": ip
         }
         await logs_collection.insert_one(log_entry)
