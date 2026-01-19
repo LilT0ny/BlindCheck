@@ -269,6 +269,11 @@ const Evidencias = () => {
                 key={ev.id}
                 className="evidencia-card"
                 onClick={() => handleVerDetalle(ev)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handleVerDetalle(ev);
+                }}
+                role="button"
+                tabIndex={0}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="evidencia-image">
@@ -331,6 +336,7 @@ const Evidencias = () => {
             <div
               className="modal-content modal-large"
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
               role="document"
               tabIndex={-1}
             >

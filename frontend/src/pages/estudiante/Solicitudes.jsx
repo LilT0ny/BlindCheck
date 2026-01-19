@@ -163,6 +163,7 @@ const Solicitudes = () => {
             <div
               className="modal-content"
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
               role="document"
               tabIndex={-1}
             >
