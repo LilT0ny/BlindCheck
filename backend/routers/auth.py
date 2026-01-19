@@ -9,7 +9,7 @@ from utils.auth import create_access_token, get_current_user
 from config import settings
 from utils.logger import log_action
 
-router = APIRouter(prefix="/auth", tags=["Autenticación"])
+router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 
 @router.post("/login", response_model=TokenResponse)
 async def login(login_data: LoginRequest, request: Request, response: Response):

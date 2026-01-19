@@ -23,7 +23,7 @@ from utils.auth import get_current_user
 from utils.logger import log_action
 from utils.encryption import anonymize_name, anonymize_profesor
 
-router = APIRouter(prefix="/docente", tags=["Docente"])
+router = APIRouter(prefix="/api/docente", tags=["Docente"])
 
 # Directorios para guardar evidencias
 UPLOAD_DIR = Path("uploads/evidencias")
