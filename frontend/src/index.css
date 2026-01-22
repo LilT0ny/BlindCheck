@@ -308,6 +308,24 @@ a:hover {
   color: #1E40AF;
 }
 
+.badge-subdecano {
+  background-color: #F3E8FF; /* Purple 100 */
+  color: #6B21A8; /* Purple 800 */
+  border: 1px solid #E9D5FF;
+}
+
+.badge-docente {
+  background-color: #E0F2FE; /* Sky 100 */
+  color: #0369A1; /* Sky 700 */
+  border: 1px solid #BAE6FD;
+}
+
+.badge-estudiante {
+  background-color: #DCFCE7; /* Emerald 100 */
+  color: #15803D; /* Emerald 700 */
+  border: 1px solid #BBF7D0;
+}
+
 /* Alertas */
 .alert {
   padding: 1rem;

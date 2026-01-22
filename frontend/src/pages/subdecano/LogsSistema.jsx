@@ -60,14 +60,32 @@ const LogsSistema = () => {
                                                 <td>{fechaObj.toLocaleDateString()}</td>
                                                 <td>{fechaObj.toLocaleTimeString()}</td>
                                                 <td>
-                                                    <span className={`badge ${log.rol === 'subdecano' ? 'badge-primary' : log.rol === 'docente' ? 'badge-secondary' : 'badge-info'}`}>
+                                                    <span className={`badge ${log.rol === 'subdecano' ? 'badge-subdecano' :
+                                                            log.rol === 'docente' ? 'badge-docente' :
+                                                                'badge-estudiante'
+                                                        }`}>
                                                         {log.rol}
                                                     </span>
                                                 </td>
-                                                <td className="font-mono text-xs">{log.usuario_id}</td>
-                                                <td className="font-bold">{log.accion}</td>
-                                                <td>{log.detalle}</td>
-                                                <td className="font-mono text-xs">{log.ip || '-'}</td>
+                                                <td>
+                                                    <div className="flex items-center gap-2">
+                                                        <div
+                                                            style={{
+                                                                width: '10px',
+                                                                height: '10px',
+                                                                borderRadius: '50%',
+                                                                backgroundColor: stringToColor(log.usuario_id)
+                                                            }}
+                                                            title={`Color ID: ${log.usuario_id}`}
+                                                        ></div>
+                                                        <span className="font-mono text-xs text-secondary">
+                                                            {log.usuario_id.substring(0, 8)}...
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td className="font-bold text-sm">{log.accion}</td>
+                                                <td className="text-sm text-gray-600">{log.detalle}</td>
+                                                <td className="font-mono text-xs text-gray-500">{log.ip || '-'}</td>
                                             </tr>
                                         );
                                     })
