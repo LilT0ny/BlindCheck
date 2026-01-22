@@ -39,13 +39,15 @@ jobs:
             # Borra caché de construcción para liberar más espacio
             docker builder prune -f
 
-            # 5. Gestión de Certificados SSL (Automático)
-            if [ ! -d "./certbot/conf/live/blindcheck.space" ]; then
-              echo "⚠️ SSL: No se detectaron certificados. Iniciando configuración inicial..."
-              chmod +x init-letsencrypt.sh
-              ./init-letsencrypt.sh
+
+
+            # 5. Gestión de Certificados SSL (Manual - ver init-letsencrypt.sh)
+            # El paso de generación automática se ha eliminado para evitar bloqueos de Let's Encrypt.
+            # Los certificados se persisten en el servidor en ./certbot
+            if [ -d "./certbot/conf/live/blindcheck.space" ]; then
+               echo "✅ SSL: Certificados detectados."
             else
-              echo "✅ SSL: Certificados detectados."
+               echo "⚠️ SSL: No se detectaron certificados. RECUERDA: Ejecutar ./init-letsencrypt.sh manualmente en el servidor la primera vez."
             fi
 
             # 6. Despliegue y Re-construcción

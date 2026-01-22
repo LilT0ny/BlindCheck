@@ -47,3 +47,6 @@ logs/
 *.tmp
 *.temp
 .cache/
+
+# Ignorar certificados SSL/TLS
+certbot/
