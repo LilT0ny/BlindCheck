@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../../components/Layout';
 import api from '../../services/api';
 
+const stringToColor = (str) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+    return '#' + '00000'.substring(0, 6 - c.length) + c;
+};
+
 const LogsSistema = () => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -61,8 +70,8 @@ const LogsSistema = () => {
                                                 <td>{fechaObj.toLocaleTimeString()}</td>
                                                 <td>
                                                     <span className={`badge ${log.rol === 'subdecano' ? 'badge-subdecano' :
-                                                            log.rol === 'docente' ? 'badge-docente' :
-                                                                'badge-estudiante'
+                                                        log.rol === 'docente' ? 'badge-docente' :
+                                                            'badge-estudiante'
                                                         }`}>
                                                         {log.rol}
                                                     </span>
