@@ -2,13 +2,13 @@ from fastapi import APIRouter, HTTPException, Depends, status, Response, Request
 
 from datetime import timedelta
 from typing import Dict
-from models.schemas import LoginRequest, LoginResponse, UserRole, CambioPasswordForzado, SolicitudResetPassword
-from database import estudiantes_collection, docentes_collection, subdecanos_collection, reset_password_collection
-from utils.limiter import limiter
-from utils.encryption import verify_password, decrypt_data, hash_password
-from utils.auth import create_access_token, get_current_user
-from config import settings
-from utils.logger import log_action
+from common.models.schemas import LoginRequest, LoginResponse, UserRole, CambioPasswordForzado, SolicitudResetPassword
+from common.database import estudiantes_collection, docentes_collection, subdecanos_collection, reset_password_collection
+from common.app_factory import limiter
+from common.utils.encryption import verify_password, decrypt_data, hash_password
+from common.utils.auth import create_access_token, get_current_user
+from common.config import settings
+from common.utils.logger import log_action
 
 router = APIRouter(prefix="/api/auth", tags=["Autenticación"])
 

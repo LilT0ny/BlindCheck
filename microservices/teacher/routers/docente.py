@@ -8,20 +8,20 @@ from pathlib import Path
 from PIL import Image, ImageFilter, ExifTags
 import io
 import base64
-from models.schemas import (
+from common.models.schemas import (
     DocenteUpdate, DocenteResponse,
     EvidenciaCreate, EvidenciaResponse,
     CalificacionCreate, CalificacionResponse,
     SolicitudResponse, EstadoSolicitud
 )
-from database import (
+from common.database import (
     docentes_collection, evidencias_collection,
     calificaciones_collection, solicitudes_collection,
     materias_collection, mensajes_collection, estudiantes_collection
 )
-from utils.auth import get_current_user
-from utils.logger import log_action
-from utils.encryption import anonymize_name, anonymize_profesor
+from common.utils.auth import get_current_user
+from common.utils.logger import log_action
+from common.utils.encryption import anonymize_name, anonymize_profesor
 
 router = APIRouter(prefix="/api/docente", tags=["Docente"])
 

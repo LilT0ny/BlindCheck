@@ -2,19 +2,19 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List, Dict
 from bson import ObjectId
 from datetime import datetime
-from models.schemas import (
+from common.models.schemas import (
     SolicitudCreate, SolicitudResponse, EstadoSolicitud,
     EstudianteUpdate, EstudianteResponse, MensajeResponse,
     CalificacionResponse
 )
-from database import (
+from common.database import (
     solicitudes_collection, estudiantes_collection, 
     mensajes_collection, materias_collection, calificaciones_collection,
     docentes_collection, evidencias_collection
 )
-from utils.auth import get_current_user
-from utils.logger import log_action
-from utils.encryption import anonymize_name, anonymize_profesor
+from common.utils.auth import get_current_user
+from common.utils.logger import log_action
+from common.utils.encryption import anonymize_name, anonymize_profesor
 
 router = APIRouter(prefix="/api/estudiante", tags=["Estudiante"])
 

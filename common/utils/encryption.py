@@ -1,6 +1,6 @@
 from cryptography.fernet import Fernet
 from passlib.context import CryptContext
-from config import settings
+from common.config import settings
 import base64
 import hashlib
 

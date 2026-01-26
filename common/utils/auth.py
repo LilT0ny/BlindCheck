@@ -3,7 +3,7 @@ from typing import Optional, Dict
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
-from config import settings
+from common.config import settings
 
 # Definimos el esquema OAuth2. 
 # tokenUrl apunta a la ruta de login (ajustada según tu root_path /api)
