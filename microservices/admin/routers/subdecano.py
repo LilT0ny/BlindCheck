@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from typing import List, Dict
 from bson import ObjectId
 from datetime import datetime
-from models.schemas import (
+from common.models.schemas import (
     DocenteCreate, DocenteUpdate, DocenteResponse,
     EstudianteCreate, EstudianteResponse,
     SolicitudResponse, SolicitudUpdateEstado, EstadoSolicitud,
@@ -683,7 +683,7 @@ async def listar_solicitudes_reset(current_user: Dict = Depends(get_current_user
     if current_user["role"] != "subdecano":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
-    from database import reset_password_collection
+    from common.database import reset_password_collection
     
     solicitudes = await reset_password_collection.find().sort("fecha_solicitud", -1).to_list(length=1000)
     
@@ -708,7 +708,7 @@ async def generar_password_reset(
     if current_user["role"] != "subdecano":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
-    from database import reset_password_collection
+    from common.database import reset_password_collection
     import secrets
     import string
     
@@ -734,7 +734,7 @@ async def generar_password_reset(
         collection = subdecanos_collection
     
     # Actualizar la contraseña en la colección del usuario
-    from utils.encryption import hash_password
+    from common.utils.encryption import hash_password
     
     await collection.update_one(
         {"_id": solicitud["user_id"]},
@@ -768,7 +768,7 @@ async def generar_password_reset(
 
 # =============== LOGS DEL SISTEMA ===============
 
-from models.schemas import LogResponse
+from common.models.schemas import LogResponse
 
 @router.get("/logs", response_model=List[LogResponse])
 async def obtener_logs(
@@ -779,7 +779,7 @@ async def obtener_logs(
     if current_user["role"] != "subdecano":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acceso denegado")
     
-    from database import logs_collection
+    from common.database import logs_collection
     
     logs = await logs_collection.find().sort("fecha", -1).limit(limit).to_list(length=limit)
     
