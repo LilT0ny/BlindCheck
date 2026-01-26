@@ -9,12 +9,12 @@ from models.schemas import (
     MateriaCreate, MateriaResponse,
     DocenteCreateBySubdecano, EstudianteCreateBySubdecano
 )
-from database import (
+from common.database import (
     docentes_collection, estudiantes_collection, subdecanos_collection,
     solicitudes_collection, materias_collection, mensajes_collection
 )
-from utils.auth import get_current_user
-from utils.encryption import hash_password, anonymize_name
+from common.utils.auth import get_current_user
+from common.utils.encryption import hash_password, anonymize_name
 
 router = APIRouter(prefix="/api/subdecano", tags=["Subdecano"])
 

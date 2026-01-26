@@ -1,5 +1,5 @@
 import asyncio
-from database import (
+from common.database import (
     subdecanos_collection,
     docentes_collection,
     estudiantes_collection,
