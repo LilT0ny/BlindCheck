@@ -49,4 +49,8 @@ def create_app(title: str, description: str, version: str = "1.0.0") -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Prometheus Metrics
+    from prometheus_fastapi_instrumentator import Instrumentator
+    Instrumentator().instrument(app).expose(app)
+
     return app, limiter

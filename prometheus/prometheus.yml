@@ -1,0 +1,27 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'auth-service'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['auth-service:8000']
+
+  - job_name: 'student-service'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['student-service:8000']
+
+  - job_name: 'teacher-service'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['teacher-service:8000']
+
+  - job_name: 'admin-service'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['admin-service:8000']
