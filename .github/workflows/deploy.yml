@@ -60,16 +60,22 @@ jobs:
             docker compose ps
             
             # Si el frontend no sube, nos muestra el error en los logs de GitHub
-            if [ $(docker inspect -f '{{.State.Running}}' blindcheck-frontend) != "true" ]; then
+            if [ "$(docker inspect -f '{{.State.Running}}' blindcheck-frontend 2>/dev/null)" != "true" ]; then
               echo "❌ ERROR: El frontend falló al iniciar. Mostrando logs:"
               docker logs blindcheck-frontend
               exit 1
             fi
 
             # Verificación específica para el backend
-            if [ $(docker inspect -f '{{.State.Running}}' blindcheck-backend) != "true" ]; then
-              echo "❌ ERROR: El backend falló al iniciar. Mostrando logs:"
-              docker logs blindcheck-backend
+            # Note: blindcheck-backend might need to be replaced with specific service names if you check them individually
+            # But here we just check if it's running if distinct from services defined. 
+            # Actually, your docker-compose has 'auth-service', 'student-service', etc.
+            # You don't have a container named 'blindcheck-backend'. 
+            # I will assume you want to check one of the core services, e.g., auth-service.
+            
+            if [ "$(docker inspect -f '{{.State.Running}}' blindcheck-auth 2>/dev/null)" != "true" ]; then
+              echo "❌ ERROR: El Auth Service falló al iniciar. Mostrando logs:"
+              docker logs blindcheck-auth
               exit 1
             fi
             
