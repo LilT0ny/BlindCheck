@@ -142,6 +142,27 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
 
+  loki:
+    image: grafana/loki:latest
+    restart: unless-stopped
+    container_name: blindcheck-loki
+    volumes:
+      - ./loki/local-config.yaml:/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:latest
+    restart: unless-stopped
+    container_name: blindcheck-promtail
+    volumes:
+      - ./promtail/config.yaml:/etc/promtail/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro # Helper for reading logs
+    depends_on:
+      - loki
+
 volumes:
   mongo_data:
   grafana_data:
