@@ -169,6 +169,13 @@ async def solicitar_reset_password(datos: SolicitudResetPassword, request: Reque
         # No revelar si el email existe o no (seguridad)
         return {"message": "Si el email existe, se enviará una solicitud al subdecano"}
     
+    # BLOQUEAR RESET PARA SUBDECANOS
+    if rol == "subdecano":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Los subdecanos no pueden solicitar reset de contraseña. Contacte directamente con el administrador."
+        )
+    
     # Verificar si ya existe una solicitud pendiente
     solicitud_pendiente = await reset_password_collection.find_one({
         "email": datos.email,

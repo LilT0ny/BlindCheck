@@ -213,13 +213,15 @@ const Login = () => {
             </button>
 
             <div className="login-links">
-              <button
-                type="button"
-                className="link-button flex items-center justify-center gap-2"
-                onClick={() => setShowRecuperarPassword(true)}
-              >
-                <Key className="w-4 h-4" /> ¿Olvidó su contraseña?
-              </button>
+              {formData.role !== 'subdecano' && (
+                <button
+                  type="button"
+                  className="link-button flex items-center justify-center gap-2"
+                  onClick={() => setShowRecuperarPassword(true)}
+                >
+                  <Key className="w-4 h-4" /> ¿Olvidó su contraseña?
+                </button>
+              )}
             </div>
           </form>
         </div>
