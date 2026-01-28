@@ -6,7 +6,8 @@ export const useAuthStore = create((set) => ({
   isAuthenticated: false,
 
   login: (userData) => {
-    sessionStorage.setItem('user', JSON.stringify(userData));
+    // ⚠️ NO guardar datos en sessionStorage
+    // El token ya está en HttpOnly cookie (no accesible desde JavaScript)
     set({
       user: userData,
       isAuthenticated: true
@@ -19,7 +20,7 @@ export const useAuthStore = create((set) => ({
     } catch (e) {
       console.error("Logout failed", e);
     }
-    sessionStorage.removeItem('user');
+    // ✅ HttpOnly cookie se borra automáticamente por el servidor
     set({
       user: null,
       isAuthenticated: false
@@ -27,7 +28,7 @@ export const useAuthStore = create((set) => ({
   },
 
   updateUser: (userData) => {
-    sessionStorage.setItem('user', JSON.stringify(userData));
+    // ⚠️ NO guardar datos en sessionStorage
     set({ user: userData });
   },
 
@@ -35,12 +36,11 @@ export const useAuthStore = create((set) => ({
   restoreSession: async () => {
     try {
       const response = await api.get('/auth/me');
-      // response.data es el usuario directmente según backend logic
+      // El token viene en HttpOnly cookie (automático)
       const user = response.data;
-      sessionStorage.setItem('user', JSON.stringify(user));
+      // ⚠️ NO guardar en sessionStorage - mantener en memoria solamente
       set({ user, isAuthenticated: true });
     } catch (error) {
-      sessionStorage.removeItem('user');
       set({ user: null, isAuthenticated: false });
     }
   }
